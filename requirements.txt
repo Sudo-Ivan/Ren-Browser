@@ -1,0 +1,8 @@
+python==3.13
+rns==0.8.8
+lxmf==0.5.8
+uvicorn[standard]==0.34.0
+fastapi[standard]==0.115.6
+pydantic==2.10.4
+msgpack==1.1.0
+
