@@ -517,6 +517,27 @@ class LXMFHandler:
         self.cached_links[destination_hash] = link
         return link
 
+    async def get_announces(self, aspect: Optional[str] = None) -> List[Announce]:
+        """Get announces filtered by aspect"""
+        announces = []
+        try:
+            for announce_hash, announce in self.announces.items():
+                if aspect and announce["aspect"] != aspect:
+                    continue
+                announces.append(
+                    Announce(
+                        destination_hash=announce["destination_hash"],
+                        identity_hash=announce["identity_hash"],
+                        display_name=announce["display_name"],
+                        aspect=announce["aspect"],
+                        created_at=announce["created_at"],
+                        updated_at=announce["updated_at"]
+                    )
+                )
+        except Exception as e:
+            self.logger.error(f"Error getting announces: {str(e)}")
+        return announces
+
 
 lxmf_instance = None
 
