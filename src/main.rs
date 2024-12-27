@@ -3,9 +3,10 @@ use iced::{
     event::Event,
     executor,
     keyboard::{self, KeyCode},
-    theme, time,
-    widget::{button, column, container, row, scrollable, text, text_input, Row},
-    Application, Command, Element, Length, Settings, Subscription, Theme,
+    theme::{self, Theme},
+    time,
+    widget::{button, column, container, row, scrollable, text, text_input, Column, Row},
+    Application, Color, Command, Element, Length, Settings, Subscription,
 };
 
 use chrono;
@@ -30,6 +31,9 @@ use renderers::mu_renderer::RendererType;
 use shortcuts::{handle_shortcut, Shortcut};
 
 use crate::Message as LibMessage;
+
+mod caching;
+use caching::PageCache;
 
 const VERSION: &str = "0.3.0";
 
@@ -96,6 +100,7 @@ struct RenBrowser {
     nodes: Vec<Node>,
     api_status: ApiStatus,
     next_tab_id: usize,
+    page_cache: PageCache,
 }
 
 #[derive(Debug, Clone)]
@@ -134,17 +139,8 @@ impl Application for RenBrowser {
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
-        let initial_tab = Tab {
-            id: 0,
-            address: String::new(),
-            content: String::from("Welcome to Ren Browser"),
-            loading: false,
-            show_address: true,
-            rendered_content: Vec::new(),
-            renderer_type: RendererType::default(),
-            display_name: None,
-        };
-
+        let initial_tab = Tab::new(0);
+        
         (
             RenBrowser {
                 tabs: vec![initial_tab],
@@ -156,6 +152,7 @@ impl Application for RenBrowser {
                     address: String::new(),
                 },
                 next_tab_id: 1,
+                page_cache: PageCache::new(300),
             },
             Command::batch(vec![
                 fetch_api_status().map(Message::from_lib),
@@ -227,7 +224,25 @@ impl Application for RenBrowser {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
                     tab.address = self.address_input.clone();
-                    fetch_page(tab.address.clone())
+                    
+                    // Check cache first
+                    if let Some(cached_content) = self.page_cache.get(&tab.address) {
+                        tab.loading = false;
+                        tab.content = cached_content.clone();
+                        tab.show_address = false;
+                        
+                        let mut renderer = MicronRenderer::new();
+                        if tab.address.ends_with(".mu") {
+                            tab.rendered_content = renderer.parse(&tab.content);
+                            tab.renderer_type = renderer.get_renderer_type();
+                        } else {
+                            tab.rendered_content = vec![(tab.content.clone(), MicronStyle::default())];
+                            tab.renderer_type = RendererType::Plain;
+                        }
+                        Command::none()
+                    } else {
+                        fetch_page(tab.address.clone())
+                    }
                 } else {
                     warn!("No active tab to load page");
                     Command::none()
@@ -264,6 +279,9 @@ impl Application for RenBrowser {
                     tab.loading = false;
                     match *result {
                         Ok(content) => {
+                            // Cache the content
+                            self.page_cache.set(tab.address.clone(), content.clone());
+                            
                             tab.content = content.clone();
                             tab.show_address = false;
 
@@ -275,11 +293,24 @@ impl Application for RenBrowser {
                             }
 
                             let mut renderer = MicronRenderer::new();
-                            tab.rendered_content = renderer.parse(&content);
-                            debug!("Content rendered");
+
+                            // Check if it's a .mu file
+                            if tab.address.ends_with(".mu") {
+                                debug!("Processing .mu file content");
+                                tab.rendered_content = renderer.parse(&content);
+                                tab.renderer_type = renderer.get_renderer_type();
+                            } else {
+                                debug!("Processing plain text content");
+                                tab.rendered_content = vec![(content, MicronStyle::default())];
+                                tab.renderer_type = RendererType::Plain;
+                            }
                         }
                         Err(e) => {
+                            // Remove from cache if there was an error
+                            self.page_cache.remove(&tab.address);
+                            
                             let error_msg = format!("Error loading page: {}", e);
+                            debug!("Page load error: {}", error_msg);
                             tab.content = error_msg.clone();
                             tab.show_address = true;
                             tab.rendered_content = vec![(error_msg, MicronStyle::default())];
@@ -301,6 +332,8 @@ impl Application for RenBrowser {
             }
             Message::Shortcut(Shortcut::Reload) | Message::ReloadPage => {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                    // Clear cache for this page
+                    self.page_cache.remove(&tab.address);
                     tab.loading = true;
                     return fetch_page(tab.address.clone());
                 }
@@ -382,7 +415,9 @@ impl Application for RenBrowser {
                         "New Tab"
                     } else {
                         tab.display_name.as_deref().unwrap_or_else(|| {
-                            if self.active_tab == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0) {
+                            if self.active_tab
+                                == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0)
+                            {
                                 &tab.address
                             } else {
                                 tab.address.split('/').last().unwrap_or("New Tab")
@@ -475,16 +510,34 @@ impl Application for RenBrowser {
                             tab.rendered_content
                                 .iter()
                                 .map(|(content, style)| {
-                                    let mut text_el = text(content);
-                                    text_el = text_el.size(TEXT_SIZE);
+                                    let mut text_el = text(content).size(TEXT_SIZE);
 
                                     if let Some(color) = style.foreground {
-                                        text_el = text_el.style(color);
+                                        text_el = text_el.style(theme::Text::Color(color));
                                     } else {
-                                        text_el = text_el.style(Styles::text_color());
+                                        text_el =
+                                            text_el.style(theme::Text::Color(Styles::text_color()));
                                     }
 
-                                    let container = container(text_el);
+                                    let mut container = container(text_el);
+
+                                    if let Some(bg) = style.background {
+                                        container = container.style(move |_theme: &Theme| {
+                                            container::Appearance {
+                                                background: Some(bg.into()),
+                                                ..Default::default()
+                                            }
+                                        });
+                                    }
+
+                                    if style.bold {
+                                        container = container.style(|_theme: &Theme| {
+                                            container::Appearance {
+                                                text_color: Some(Color::WHITE),
+                                                ..Default::default()
+                                            }
+                                        });
+                                    }
 
                                     match style.alignment {
                                         TextAlignment::Center => {
