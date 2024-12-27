@@ -47,10 +47,13 @@ cargo run -- --debug
 python ren-api.py --debug # or poetry run python ren-api.py --debug
 ```
 
-API Routes:
+v1 API Routes:
 
 ```bash
-curl http://localhost:8000/api/v1/
+/api/v1/status
+/api/v1/nodes
+/api/v1/page
+/api/v1/send
 ```
 
 ### Libraries Used
