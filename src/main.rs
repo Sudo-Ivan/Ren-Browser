@@ -256,6 +256,11 @@ impl Application for RenBrowser {
             }
             Message::LoadPage => {
                 info!("Loading page: {}", self.address_input);
+                // Check if it's the settings page
+                if self.address_input.to_lowercase() == "settings" {
+                    return self.update(Message::OpenSettings);
+                }
+                
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
                     tab.address = self.address_input.clone();
