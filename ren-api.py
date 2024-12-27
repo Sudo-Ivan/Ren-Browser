@@ -202,7 +202,6 @@ class LXMFHandler:
             f"Received {aspect} announce from {RNS.prettyhexrep(destination_hash)}"
         )
 
-        # Parse display name from app_data
         display_name = None
         if app_data:
             try:
@@ -211,21 +210,18 @@ class LXMFHandler:
                 pass
 
         # Save node and announce
-        self.update_node(destination_hash.hex(), display_name or "Unknown")
+        self.update_node(destination_hash.hex(), display_name or "Anonymous")
         self._store_announce(aspect, destination_hash, announced_identity, app_data)
 
     def _store_announce(self, aspect, destination_hash, announced_identity, app_data):
         """Store announce data"""
         try:
-            # Try to decode app_data based on aspect
             display_name = None
             if app_data:
                 try:
                     if aspect == "lxmf.delivery":
-                        # LXMF delivery announces use UTF-8 encoded display names
                         display_name = app_data.decode("utf-8")
                     elif aspect == "nomadnetwork.node":
-                        # Nomadnet announces may use msgpack
                         try:
                             display_name = msgpack.unpackb(app_data).get("name")
                         except:
@@ -280,9 +276,10 @@ class LXMFHandler:
                 self.nodes = {
                     k: v
                     for k, v in self.nodes.items()
-                    if current_time - v["last_seen"] < 86400
+                    if current_time - v["last_seen"] < 604800  # 7 days in seconds
                 }
-                self.save_nodes()
+                if len(self.nodes) < len(self.nodes):
+                    self.save_nodes()
                 time.sleep(3600)
 
         thread = threading.Thread(target=cleanup, daemon=True)

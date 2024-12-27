@@ -31,7 +31,7 @@ use shortcuts::{handle_shortcut, Shortcut};
 
 use crate::Message as LibMessage;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = "0.3.0";
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
@@ -354,12 +354,11 @@ impl Application for RenBrowser {
                 )
                 .height(Length::Fill)
             ],
+            // Bottom section with version and address
             column![
-                // Version display
-                text(&format!("v{}", VERSION))
+                text("Ren Browser - v0.3.0")
                     .size(TEXT_SIZE - 2)
                     .style(theme::Text::Color(Styles::muted_text())),
-                // Address display
                 text(if !self.api_status.address.is_empty() {
                     &self.api_status.address[0..16]
                 } else {
@@ -379,22 +378,16 @@ impl Application for RenBrowser {
             self.tabs
                 .iter()
                 .map(|tab| {
-                    let tab_text = if self.tabs.len() > 1 && !tab.address.is_empty() {
-                        if self.active_tab
-                            == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0)
-                        {
-                            &tab.address
-                        } else {
-                            tab.display_name.as_deref().unwrap_or_else(|| {
-                                tab.address.split('/').last().unwrap_or("New Tab")
-                            })
-                        }
+                    let tab_text = if tab.address.is_empty() {
+                        "New Tab"
                     } else {
-                        if tab.address.is_empty() {
-                            "New Tab"
-                        } else {
-                            tab.display_name.as_deref().unwrap_or(&tab.address)
-                        }
+                        tab.display_name.as_deref().unwrap_or_else(|| {
+                            if self.active_tab == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0) {
+                                &tab.address
+                            } else {
+                                tab.address.split('/').last().unwrap_or("New Tab")
+                            }
+                        })
                     };
 
                     button(
