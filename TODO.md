@@ -4,7 +4,7 @@
 - [x] Basic browsing functionality
 - [x] Node discovery and listing
 - [x] Page loading
-- [ ] Markup (.mu) renderer
+- [ ] Micron (.mu) renderer
 - [ ] HTML + CSS renderer (search for at address:/page/index.html)
 - [ ] File downloads from nodes
 

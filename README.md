@@ -3,7 +3,7 @@
 > [!NOTE]  
 > This is a work in progress 2024-2025.
 
-A [Reticulum](https://github.com/markqvist/Reticulum) page browser that can render .mu markup files on nodes and eventually also HTML+CSS files hosted on nodes. 
+A [Reticulum](https://github.com/markqvist/Reticulum) page browser that can render `.mu` micron files on nodes and eventually also HTML+CSS files hosted on nodes. 
 
 Uses [Iced](https://iced.rs/) GUI (Rust) and [FastAPI](https://fastapi.tiangolo.com/) backend (Python).
 
