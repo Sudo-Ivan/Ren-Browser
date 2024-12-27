@@ -15,35 +15,38 @@ See [TODO.md](TODO.md).
 
 - Micron Renderer
 - Plain Text Renderer (fallback)
-- HTML Renderer (future)
 - Page Caching
+- Configurable via settings (type settings in the URL bar) or .toml files (.config/ren-browser/ren-browser.toml)
+
+## Ren API
+
+- Multiple Clients
+- Saving nodes and paths to JSON (moving to SQLite in the future)
+- Detailed Logging
 
 
 ## Keybindings
 
 - `Ctrl+R` to reload a page
+- `Ctrl+T` to open a new tab
+- `Ctrl+W` to close a tab
 
 ## Requirements
 ```
-Python 3.13
+Python ^3.10
 Rust 1.83.0
 ```
 
 ## Running
 
-```bash
-./run.sh
-```
-or
-
-API:
+**API:**
 
 ```bash
 pip install -r requirements.txt # or poetry install
-python ren-api.py # or poetry run python ren-api.py
+python ren_api/main.py # or poetry run python ren_api/main.py
 ```
 
-Iced GUI:
+**Iced GUI:**
 
 ```bash
 cargo run
@@ -52,28 +55,24 @@ cargo run
 ## Debugging
 
 ```bash
-./run.sh -d
-```
-
-```bash
 cargo run -- --debug
 ```
 
 ```bash
-python ren-api.py --debug # or poetry run python ren-api.py --debug
+python ren_api/main.py --debug # or poetry run python ren_api/main.py --debug
 ```
 
-v1 API Routes:
+## Ren API Routes
 
 ```bash
-/api/v1/status
-/api/v1/nodes
-/api/v1/page
+/api/v1/status - Get API status
+/api/v1/nodes - Get all nodes
+/api/v1/page - Get page content for <address>:/pages/<page_name>
 ```
 
 ### Libraries Used
 
-Python:
+**Python:**
 ```
 - rns 0.8.8 (MIT)
 - lxmf 0.5.8 (MIT)
@@ -83,7 +82,7 @@ Python:
 - msgpack 1.1.0 (Apache 2.0)
 ```
 
-Rust:
+**Rust:**
 ```
 - Iced 0.10.0 (MIT)
 - reqwest 0.11 (Apache 2.0)
@@ -93,4 +92,6 @@ Rust:
 - chrono 0.4 (MIT / Apache 2.0)
 - log 0.4 (Apache 2.0)
 - simple_logger 4.2 (MIT)
+- toml 0.8 (MIT)
+- dirs 5.0 (Apache 2.0)
 ```
