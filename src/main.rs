@@ -325,12 +325,12 @@ impl Application for RenBrowser {
                         self.nodes
                             .iter()
                             .map(|node| {
-                                let name = node.display_name.as_deref().unwrap_or("Unknown");
+                                let name = node.display_name.as_deref().unwrap_or("Anonymous");
                                 let hash = &node.destination_hash[0..8];
                                 let last_seen =
                                     chrono::DateTime::from_timestamp(node.updated_at, 0)
                                         .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
-                                        .unwrap_or_else(|| "Unknown".to_string());
+                                        .unwrap_or_else(|| "Anonymous".to_string());
 
                                 button(
                                     column![
