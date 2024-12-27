@@ -7,6 +7,8 @@ A [Reticulum](https://github.com/markqvist/Reticulum) page browser that can rend
 
 Uses [Iced](https://iced.rs/) GUI (Rust) and [FastAPI](https://fastapi.tiangolo.com/) backend (Python).
 
+See [TODO.md](TODO.md).
+
 ## Requirements
 ```
 Python 3.13
