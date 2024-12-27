@@ -55,6 +55,22 @@ impl Styles {
     pub fn search_input() -> iced::theme::TextInput {
         iced::theme::TextInput::Custom(Box::new(SearchInputStyle))
     }
+
+    pub fn settings_container() -> iced::theme::Container {
+        iced::theme::Container::Custom(Box::new(SettingsContainerStyle))
+    }
+
+    pub fn settings_section() -> iced::theme::Container {
+        iced::theme::Container::Custom(Box::new(SettingsSectionStyle))
+    }
+
+    pub fn settings_input() -> iced::theme::TextInput {
+        iced::theme::TextInput::Custom(Box::new(SettingsInputStyle))
+    }
+
+    pub fn save_notification() -> iced::theme::Container {
+        iced::theme::Container::Custom(Box::new(SaveNotificationStyle))
+    }
 }
 
 struct NodeButtonStyle;
@@ -232,6 +248,100 @@ impl text_input::StyleSheet for SearchInputStyle {
             background: iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15)),
             border_color: Color::from_rgb(0.2, 0.2, 0.2),
             ..active
+        }
+    }
+}
+
+struct SettingsContainerStyle;
+struct SettingsSectionStyle;
+struct SettingsInputStyle;
+struct SaveNotificationStyle;
+
+impl container::StyleSheet for SettingsContainerStyle {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: Some(iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15))),
+            border_radius: 8.0.into(),
+            border_width: 1.0,
+            border_color: Color::from_rgb(0.3, 0.3, 0.3),
+            ..Default::default()
+        }
+    }
+}
+
+impl container::StyleSheet for SettingsSectionStyle {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: Some(iced::Background::Color(Color::from_rgb(0.18, 0.18, 0.18))),
+            border_radius: 6.0.into(),
+            border_width: 0.0,
+            ..Default::default()
+        }
+    }
+}
+
+impl text_input::StyleSheet for SettingsInputStyle {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
+            background: iced::Background::Color(Color::from_rgb(0.2, 0.2, 0.2)),
+            border_radius: 4.0.into(),
+            border_width: 1.0,
+            border_color: Color::from_rgb(0.3, 0.3, 0.3),
+            icon_color: Color::from_rgb(0.7, 0.7, 0.7),
+        }
+    }
+
+    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
+        let active = self.active(style);
+        text_input::Appearance {
+            border_color: Color::from_rgb(0.5, 0.5, 0.5),
+            ..active
+        }
+    }
+
+    fn value_color(&self, _style: &Self::Style) -> Color {
+        Color::WHITE
+    }
+
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.5, 0.5, 0.5)
+    }
+
+    fn selection_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.3, 0.4, 0.9)
+    }
+
+    fn disabled_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.3, 0.3, 0.3)
+    }
+
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        let active = self.active(style);
+        text_input::Appearance {
+            background: iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15)),
+            border_color: Color::from_rgb(0.2, 0.2, 0.2),
+            ..active
+        }
+    }
+}
+
+impl container::StyleSheet for SaveNotificationStyle {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: Some(iced::Background::Color(Color::from_rgba(
+                0.0, 0.0, 0.0, 0.8,
+            ))),
+            border_radius: 4.0.into(),
+            border_width: 0.0,
+            ..Default::default()
         }
     }
 }

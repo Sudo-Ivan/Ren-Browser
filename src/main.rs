@@ -1,6 +1,5 @@
 use iced::{
     alignment::{Alignment, Horizontal},
-    event::Event,
     executor,
     keyboard::{self, KeyCode},
     theme::{self, Theme},
@@ -9,26 +8,23 @@ use iced::{
     Application, Color, Command, Element, Length, Settings, Subscription,
 };
 
-use chrono;
 use log::{debug, info, warn, LevelFilter};
 use simple_logger::SimpleLogger;
 use std::env;
 
-mod styles;
-use styles::{
-    Styles, BORDER_RADIUS, CLOSE_BUTTON_SIZE, CONTENT_PADDING, HEADING_SIZE, PADDING,
-    SIDEBAR_WIDTH, SPACING, SPINNER_BORDER, SPINNER_SIZE, TAB_HEIGHT, TEXT_SIZE,
+use ren_browser::styles::{
+    Styles, CLOSE_BUTTON_SIZE, CONTENT_PADDING, PADDING, SIDEBAR_WIDTH, SPACING, SPINNER_SIZE,
+    TAB_HEIGHT, TEXT_SIZE,
 };
 
 mod api;
 use api::{fetch_api_status, fetch_nodes, fetch_page, ApiStatus, Node};
 
 mod renderers;
-use renderers::mu_renderer::{MicronRenderer, MicronStyle, TextAlignment};
+use renderers::mu_renderer::{MicronRenderer, MicronStyle, RendererType, TextAlignment};
 
-mod shortcuts;
-use renderers::mu_renderer::RendererType;
-use shortcuts::{handle_shortcut, Shortcut};
+mod ren_settings;
+use ren_settings::{RenSettings, SettingUpdate};
 
 use crate::Message as LibMessage;
 
@@ -39,6 +35,7 @@ const VERSION: &str = "0.3.0";
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
+    let settings = RenSettings::load();
 
     let log_level = if debug {
         LevelFilter::Debug
@@ -56,10 +53,9 @@ pub fn main() -> iced::Result {
 
     debug!("Starting Ren Browser in debug mode");
 
-    // Run the application
     RenBrowser::run(Settings {
         window: iced::window::Settings {
-            size: (1280, 720),
+            size: (settings.window.width, settings.window.height),
             ..Default::default()
         },
         ..Default::default()
@@ -100,17 +96,20 @@ impl Tab {
             loading: false,
             show_address: false,
             rendered_content: vec![
-                ("Settings".to_string(), MicronStyle { 
-                    alignment: TextAlignment::Center,
-                    foreground: None,
-                    link: None,
-                    background: None,
-                    bold: false,
-                    italic: false,
-                    underline: false,
-                    section_depth: 0,
-                    selectable: true,
-                }),
+                (
+                    "Settings".to_string(),
+                    MicronStyle {
+                        alignment: TextAlignment::Center,
+                        foreground: None,
+                        link: None,
+                        background: None,
+                        bold: false,
+                        italic: false,
+                        underline: false,
+                        section_depth: 0,
+                        selectable: true,
+                    },
+                ),
                 ("\nKeyboard Shortcuts:".to_string(), MicronStyle::default()),
                 ("F11: Open Settings".to_string(), MicronStyle::default()),
                 ("Ctrl+R: Reload Page".to_string(), MicronStyle::default()),
@@ -132,6 +131,9 @@ struct RenBrowser {
     next_tab_id: usize,
     page_cache: PageCache,
     node_search: String,
+    settings: RenSettings,
+    show_save_notification: bool,
+    save_notification_timer: Option<std::time::Instant>,
 }
 
 #[derive(Debug, Clone)]
@@ -141,26 +143,27 @@ enum Message {
     SelectTab(usize),
     AddressInputChanged(String),
     LoadPage,
+    ReloadPage,
     ApiStatusReceived(Box<Result<ApiStatus, String>>),
     NodesUpdated(Box<Result<Vec<Node>, String>>),
     PageLoaded(Box<Result<String, String>>),
     ShowAddressBar,
     Tick,
     ContentLoaded(String),
-    Shortcut(Shortcut),
-    ReloadPage,
-    FetchNodes,
     LinkClicked(String),
     NodeSearchChanged(String),
     OpenSettings,
+    UpdateSetting(SettingUpdate),
+    SaveSettings,
+    FetchNodes,
 }
 
 impl Message {
     fn from_lib(msg: LibMessage) -> Self {
         match msg {
-            LibMessage::ApiStatusReceived(result) => Message::ApiStatusReceived(result),
-            LibMessage::NodesUpdated(result) => Message::NodesUpdated(result),
-            LibMessage::PageLoaded(result) => Message::PageLoaded(result),
+            LibMessage::ApiStatusReceived(result) => Message::ApiStatusReceived(Box::new(*result)),
+            LibMessage::NodesUpdated(result) => Message::NodesUpdated(Box::new(*result)),
+            LibMessage::PageLoaded(result) => Message::PageLoaded(Box::new(*result)),
             _ => Message::AddTab,
         }
     }
@@ -174,6 +177,7 @@ impl Application for RenBrowser {
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
         let initial_tab = Tab::new(0);
+        let settings = RenSettings::load();
 
         (
             RenBrowser {
@@ -188,6 +192,9 @@ impl Application for RenBrowser {
                 next_tab_id: 1,
                 page_cache: PageCache::new(300),
                 node_search: String::new(),
+                settings,
+                show_save_notification: false,
+                save_notification_timer: None,
             },
             Command::batch(vec![
                 fetch_api_status().map(Message::from_lib),
@@ -260,7 +267,7 @@ impl Application for RenBrowser {
                 if self.address_input.to_lowercase() == "settings" {
                     return self.update(Message::OpenSettings);
                 }
-                
+
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
                     tab.address = self.address_input.clone();
@@ -361,7 +368,15 @@ impl Application for RenBrowser {
                 Command::none()
             }
             Message::ShowAddressBar => Command::none(),
-            Message::Tick => Command::none(),
+            Message::Tick => {
+                if let Some(timer) = self.save_notification_timer {
+                    if timer.elapsed() > std::time::Duration::from_secs(2) {
+                        self.show_save_notification = false;
+                        self.save_notification_timer = None;
+                    }
+                }
+                Command::none()
+            }
             Message::ContentLoaded(content) => {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.content = content.clone();
@@ -371,16 +386,6 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
-            Message::Shortcut(Shortcut::Reload) | Message::ReloadPage => {
-                if let Some(tab) = self.tabs.get_mut(self.active_tab) {
-                    // Clear cache for this page
-                    self.page_cache.remove(&tab.address);
-                    tab.loading = true;
-                    return fetch_page(tab.address.clone());
-                }
-                Command::none()
-            }
-            Message::FetchNodes => fetch_nodes().map(Message::from_lib),
             Message::LinkClicked(url) => {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
@@ -404,9 +409,31 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
-            Message::Shortcut(Shortcut::OpenSettings) => {
-                self.update(Message::OpenSettings)
+            Message::UpdateSetting(update) => {
+                match update {
+                    SettingUpdate::WindowWidth(w) => self.settings.window.width = w,
+                    SettingUpdate::WindowHeight(h) => self.settings.window.height = h,
+                    SettingUpdate::TextSize(s) => self.settings.appearance.text_size = s,
+                    SettingUpdate::SidebarWidth(w) => self.settings.appearance.sidebar_width = w,
+                }
+                self.settings.save();
+                self.show_save_notification = true;
+                self.save_notification_timer = Some(std::time::Instant::now());
+                Command::none()
             }
+            Message::SaveSettings => {
+                self.settings.save();
+                Command::none()
+            }
+            Message::ReloadPage => {
+                if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                    self.page_cache.remove(&tab.address);
+                    tab.loading = true;
+                    return fetch_page(tab.address.clone());
+                }
+                Command::none()
+            }
+            Message::FetchNodes => fetch_nodes().map(Message::from_lib),
         }
     }
 
@@ -595,6 +622,12 @@ impl Application for RenBrowser {
                 .height(Length::Fill)
                 .center_x()
                 .center_y()
+            } else if tab.address == "settings" {
+                // Render settings page
+                container(self.settings.view().map(Message::UpdateSetting))
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
             } else {
                 container(
                     scrollable(
@@ -673,7 +706,29 @@ impl Application for RenBrowser {
         .width(Length::Fill)
         .height(Length::Fill);
 
-        row![sidebar, main_content]
+        let content = column![
+            main_content,
+            if self.show_save_notification {
+                let notification: Element<_> = container(
+                    text("Settings saved")
+                        .size(12)
+                        .style(theme::Text::Color(Color::WHITE))
+                )
+                .style(Styles::save_notification())
+                .padding(8)
+                .align_x(Horizontal::Right)
+                .into();
+                notification
+            } else {
+                container(text(""))
+                    .width(Length::Fill)
+                    .into()
+            }
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill);
+
+        row![sidebar, content]
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
