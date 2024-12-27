@@ -22,6 +22,10 @@ impl Styles {
     pub fn content_container() -> iced::Background {
         iced::Background::Color(Color::from_rgb(0.12, 0.12, 0.12))
     }
+
+    pub fn muted_text() -> Color {
+        Color::from_rgb(0.5, 0.5, 0.5)
+    }
 }
 
 struct NodeButtonStyle;
@@ -66,7 +70,7 @@ impl button::StyleSheet for NodeButtonStyle {
     }
 }
 
-pub const SIDEBAR_WIDTH: f32 = 250.0;
+pub const SIDEBAR_WIDTH: f32 = 200.0;
 pub const PADDING: u16 = 20;
 pub const SPACING: u16 = 10;
 pub const TEXT_SIZE: u16 = 14;
