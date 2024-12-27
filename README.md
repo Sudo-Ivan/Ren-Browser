@@ -1,8 +1,11 @@
 # Ren Browser
 
-A Reticulum Page Browser that can render .mu markup files on nodes and also HTML+CSS files on nodes. 
+> [!NOTE]  
+> This is a work in progress 2024-2025.
 
-Uses Iced GUI (Rust) and FastAPI backend (Python).
+A [Reticulum](https://github.com/markqvist/Reticulum) page browser that can render .mu markup files on nodes and eventually also HTML+CSS files hosted on nodes. 
+
+Uses [Iced](https://iced.rs/) GUI (Rust) and [FastAPI](https://fastapi.tiangolo.com/) backend (Python).
 
 ## Requirements
 ```
@@ -42,6 +45,12 @@ cargo run -- --debug
 
 ```bash
 python ren-api.py --debug # or poetry run python ren-api.py --debug
+```
+
+API Routes:
+
+```bash
+curl http://localhost:8000/api/v1/
 ```
 
 ### Libraries Used
