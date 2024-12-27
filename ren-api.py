@@ -106,6 +106,24 @@ class Announce(BaseModel):
     updated_at: int
 
 
+class AnnounceHandler:
+    def __init__(self, aspect_filter: str, received_announce_callback):
+        self.aspect_filter = aspect_filter
+        self.received_announce_callback = received_announce_callback
+
+    def received_announce(self, destination_hash, announced_identity, app_data, announce_packet_hash):
+        try:
+            self.received_announce_callback(
+                self.aspect_filter,
+                destination_hash, 
+                announced_identity,
+                app_data,
+                announce_packet_hash
+            )
+        except Exception as e:
+            logging.error(f"Error handling announce: {str(e)}")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000"],
@@ -144,8 +162,13 @@ class LXMFHandler:
         self.router = LXMRouter(identity=self.id, storagepath=self.config_path)
         self.local = self.router.register_delivery_identity(self.id, display_name=name)
 
-        # Register announce handler
-        RNS.Transport.register_announce_handler(self._handle_announces)
+        # Register announce handlers with specific aspects
+        RNS.Transport.register_announce_handler(
+            AnnounceHandler("lxmf.delivery", self._handle_announce)
+        )
+        RNS.Transport.register_announce_handler(
+            AnnounceHandler("nomadnetwork.node", self._handle_announce)
+        )
 
         RNS.log(
             "LXMF Router ready to receive on: {}".format(
@@ -164,64 +187,53 @@ class LXMFHandler:
         # Load saved nodes on startup
         self.load_nodes()
 
-    def _handle_announces(self, announce):
-        """Single handler for all announces"""
-        try:
-            # Convert bytes to hex string for storage
-            dest_hash = announce.destination_hash.hex()
-            self.announces[dest_hash] = announce
-
-            if announce.aspect == "lxmf.delivery":
-                self._on_lxmf_announce(announce)
-            elif announce.aspect == "lxmf.propagation":
-                self._on_propagation_announce(announce)
-
-            self.logger.debug(f"Stored announce from {dest_hash}")
-        except Exception as e:
-            self.logger.error(f"Error handling announce: {str(e)}")
-
-    def _on_lxmf_announce(self, announce):
-        self.logger.debug(
-            f"Received LXMF announce from {RNS.prettyhexrep(announce.destination_hash)}"
-        )
+    def _handle_announce(self, aspect, destination_hash, announced_identity, app_data, announce_packet_hash):
+        """Central announce handler for all aspects"""
+        self.logger.info(f"Received {aspect} announce from {RNS.prettyhexrep(destination_hash)}")
+        
+        # Parse display name from app_data
         display_name = None
-        if announce.app_data:
+        if app_data:
             try:
-                display_name = announce.app_data.decode("utf-8")
+                display_name = app_data.decode("utf-8")
             except:
                 pass
 
-        # Save node when we receive an announce
-        self.update_node(announce.destination_hash.hex(), display_name or "Unknown")
+        # Save node and announce
+        self.update_node(destination_hash.hex(), display_name or "Unknown")
+        self._store_announce(aspect, destination_hash, announced_identity, app_data)
 
-    def _on_propagation_announce(self, announce):
-        self.logger.debug(
-            f"Received propagation announce from {RNS.prettyhexrep(announce.destination_hash)}"
-        )
-
-    async def get_announces(self, aspect: Optional[str] = None) -> List[Announce]:
-        announces = []
+    def _store_announce(self, aspect, destination_hash, announced_identity, app_data):
+        """Store announce data"""
         try:
-            for dest_hash, announce in self.announces.items():
-                if aspect and announce.aspect != aspect:
-                    continue
-                announces.append(
-                    Announce(
-                        destination_hash=dest_hash,  # Already hex string
-                        identity_hash=announce.identity.hash.hex(),
-                        display_name=(
-                            announce.app_data.decode("utf-8")
-                            if announce.app_data
-                            else None
-                        ),
-                        aspect=announce.aspect,
-                        created_at=int(announce.timestamp),
-                        updated_at=int(announce.timestamp),
-                    )
-                )
+            # Try to decode app_data based on aspect
+            display_name = None
+            if app_data:
+                try:
+                    if aspect == "lxmf.delivery":
+                        # LXMF delivery announces use UTF-8 encoded display names
+                        display_name = app_data.decode("utf-8")
+                    elif aspect == "nomadnetwork.node":
+                        # Nomadnet announces may use msgpack
+                        try:
+                            display_name = msgpack.unpackb(app_data).get("name")
+                        except:
+                            display_name = app_data.decode("utf-8")
+                except Exception as e:
+                    self.logger.debug(f"Could not decode app_data: {str(e)}")
+                    display_name = None
+
+            self.announces[destination_hash.hex()] = {
+                "destination_hash": destination_hash.hex(),
+                "identity_hash": announced_identity.hash.hex(),
+                "display_name": display_name,
+                "aspect": aspect,
+                "created_at": int(time.time()),
+                "updated_at": int(time.time())
+            }
+            self.logger.debug(f"Stored {aspect} announce from {destination_hash.hex()}")
         except Exception as e:
-            self.logger.error(f"Error getting announces: {str(e)}")
-        return announces
+            self.logger.error(f"Error storing announce: {str(e)}")
 
     def load_nodes(self):
         """Load nodes from JSON file"""
