@@ -1,4 +1,5 @@
 use iced::{
+    alignment::Alignment,
     executor, theme, time,
     widget::{button, column, container, row, scrollable, text, text_input, Row},
     Application, Command, Element, Length, Settings, Subscription, Theme,
@@ -6,8 +7,6 @@ use iced::{
 
 use chrono;
 use log::{debug, info, warn, LevelFilter};
-use reqwest;
-use serde::Deserialize;
 use simple_logger::SimpleLogger;
 use std::env;
 
@@ -17,9 +16,10 @@ use styles::{
     TAB_HEIGHT, TEXT_SIZE,
 };
 
-// API constants
-const API_HOST: &str = "http://localhost:8000";
-const API_VERSION: &str = "v1";
+mod api;
+use api::{fetch_api_status, fetch_nodes, fetch_page, ApiStatus, Node};
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
@@ -38,7 +38,7 @@ pub fn main() -> iced::Result {
         .init()
         .unwrap();
 
-    debug!("Starting RenBrowser in debug mode");
+    debug!("Starting Ren Browser in debug mode");
 
     // Run the application
     RenBrowser::run(Settings {
@@ -66,22 +66,6 @@ struct RenBrowser {
     nodes: Vec<Node>,
     api_status: ApiStatus,
     next_tab_id: usize,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct Node {
-    destination_hash: String,
-    identity_hash: String,
-    display_name: Option<String>,
-    aspect: String,
-    created_at: i64,
-    updated_at: i64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct ApiStatus {
-    status: String,
-    address: String,
 }
 
 #[derive(Debug, Clone)]
@@ -221,10 +205,7 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
-            Message::ShowAddressBar => {
-                // Implementation for ShowAddressBar message
-                Command::none()
-            }
+            Message::ShowAddressBar => Command::none(),
             Message::Tick => fetch_nodes(),
         }
     }
@@ -235,38 +216,59 @@ impl Application for RenBrowser {
             .size(TEXT_SIZE);
 
         let sidebar = column![
-            status_text,
-            text(&format!("Address: {}", self.api_status.address)).size(TEXT_SIZE),
-            text("Nodes").size(HEADING_SIZE),
-            scrollable(
-                column(
-                    self.nodes
-                        .iter()
-                        .map(|node| {
-                            let name = node.display_name.as_deref().unwrap_or("Unknown");
-                            let hash = &node.destination_hash[0..8];
-                            let last_seen = chrono::DateTime::from_timestamp(node.updated_at, 0)
-                                .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
-                                .unwrap_or_else(|| "Unknown".to_string());
+            // Top section with status and nodes
+            column![
+                status_text,
+                text("Nodes").size(HEADING_SIZE),
+                scrollable(
+                    column(
+                        self.nodes
+                            .iter()
+                            .map(|node| {
+                                let name = node.display_name.as_deref().unwrap_or("Unknown");
+                                let hash = &node.destination_hash[0..8];
+                                let last_seen =
+                                    chrono::DateTime::from_timestamp(node.updated_at, 0)
+                                        .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
+                                        .unwrap_or_else(|| "Unknown".to_string());
 
-                            button(
-                                column![
-                                    text(name).size(TEXT_SIZE),
-                                    text(hash).size(TEXT_SIZE - 2),
-                                    text(last_seen).size(TEXT_SIZE - 4)
-                                ]
-                                .spacing(SPACING / 2),
-                            )
-                            .style(Styles::node_button())
-                            .width(Length::Fill)
-                            .on_press(Message::AddressInputChanged(node.destination_hash.clone()))
-                            .into()
-                        })
-                        .collect()
+                                button(
+                                    column![
+                                        text(name).size(TEXT_SIZE),
+                                        text(hash).size(TEXT_SIZE - 2),
+                                        text(last_seen).size(TEXT_SIZE - 4)
+                                    ]
+                                    .spacing(SPACING / 2),
+                                )
+                                .style(Styles::node_button())
+                                .width(Length::Fill)
+                                .on_press(Message::AddressInputChanged(
+                                    node.destination_hash.clone(),
+                                ))
+                                .into()
+                            })
+                            .collect()
+                    )
+                    .spacing(SPACING)
                 )
-                .spacing(SPACING)
-            )
-            .height(Length::Fill)
+                .height(Length::Fill)
+            ],
+            column![
+                // Version display
+                text(&format!("v{}", VERSION))
+                    .size(TEXT_SIZE - 2)
+                    .style(theme::Text::Color(Styles::muted_text())),
+                // Address display
+                text(if !self.api_status.address.is_empty() {
+                    &self.api_status.address[0..16]
+                } else {
+                    "Not connected"
+                })
+                .size(TEXT_SIZE - 2)
+            ]
+            .spacing(SPACING / 2)
+            .width(Length::Fill)
+            .align_items(Alignment::End)
         ]
         .width(Length::Fixed(SIDEBAR_WIDTH))
         .spacing(SPACING)
@@ -388,86 +390,4 @@ impl Application for RenBrowser {
     fn subscription(&self) -> Subscription<Message> {
         time::every(std::time::Duration::from_secs(30)).map(|_| Message::Tick)
     }
-}
-
-fn fetch_api_status() -> Command<Message> {
-    Command::perform(
-        async {
-            match reqwest::get(&format!("{}/api/{}/status", API_HOST, API_VERSION)).await {
-                Ok(response) => match response.json::<ApiStatus>().await {
-                    Ok(status) => Ok(status),
-                    Err(e) => Err(e.to_string()),
-                },
-                Err(e) => Err(e.to_string()),
-            }
-        },
-        |result| Message::ApiStatusReceived(Box::new(result)),
-    )
-}
-
-fn fetch_nodes() -> Command<Message> {
-    Command::perform(
-        async {
-            match reqwest::get(&format!("{}/api/{}/nodes", API_HOST, API_VERSION)).await {
-                Ok(response) => match response.json::<Vec<Node>>().await {
-                    Ok(nodes) => Ok(nodes),
-                    Err(e) => Err(e.to_string()),
-                },
-                Err(e) => Err(e.to_string()),
-            }
-        },
-        |result| Message::NodesUpdated(Box::new(result)),
-    )
-}
-
-fn fetch_page(address: String) -> Command<Message> {
-    debug!("Fetching page: {}", address);
-    Command::perform(
-        async move {
-            let client = reqwest::Client::new();
-
-            // Extract page path from address (format: hash:/page/path)
-            let parts: Vec<&str> = address.split(':').collect();
-            if parts.len() != 2 {
-                return Err("Invalid address format. Use: hash:/page/path".to_string());
-            }
-
-            let hash = parts[0];
-            let path = parts[1];
-
-            match client
-                .post(&format!("{}/api/{}/page", API_HOST, API_VERSION))
-                .json(&serde_json::json!({
-                    "destination_hash": hash,
-                    "page_path": path,
-                }))
-                .send()
-                .await
-            {
-                Ok(response) => {
-                    if response.status() == 404 {
-                        Ok("Requesting path to destination...".to_string())
-                    } else if !response.status().is_success() {
-                        Err(format!("Server error: {}", response.status()))
-                    } else {
-                        match response.json::<serde_json::Value>().await {
-                            Ok(json) => match json.get("content") {
-                                Some(content) => Ok(content
-                                    .as_str()
-                                    .unwrap_or("Invalid response format")
-                                    .to_string()),
-                                None => Err("No content in response".to_string()),
-                            },
-                            Err(e) => Err(e.to_string()),
-                        }
-                    }
-                }
-                Err(e) => Err(e.to_string()),
-            }
-        },
-        |result| {
-            debug!("Page fetch result: {:?}", result);
-            Message::PageLoaded(Box::new(result))
-        },
-    )
 }
