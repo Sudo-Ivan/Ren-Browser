@@ -451,7 +451,7 @@ class LXMFHandler:
         """Clean shutdown of Reticulum"""
         # Close all cached links
         for link in self.cached_links.values():
-            link.close()
+            link.teardown()
         self.cached_links.clear()
 
         try:
