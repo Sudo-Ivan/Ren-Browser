@@ -1,8 +1,8 @@
 import os, time, base64, asyncio, json, logging
 import RNS
+from LXMF import LXMRouter
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from LXMF import LXMRouter, LXMessage
 from queue import Queue
 from pydantic import BaseModel
 from typing import Optional, List, Dict
@@ -10,6 +10,55 @@ import threading
 from types import SimpleNamespace
 import argparse
 import msgpack
+
+description = """
+Ren Browser API helps you browse the Reticulum Network Stack.
+
+## Features
+
+* **Node Discovery** - Find and connect to nodes on the network
+* **Page Loading** - Load pages from remote nodes
+* **Real-time Updates** - Get live node status updates
+
+## Network
+
+The API connects to the Reticulum Network Stack and provides:
+
+* Node discovery and announcements
+* Page content retrieval
+* Network status information
+"""
+
+app = FastAPI(
+    title="Ren Browser API",
+    description=description,
+    version="0.1.0",
+    contact={
+        "name": "Ren Browser",
+        "url": "https://github.com/Sudo-Ivan/Ren-Browser",
+    },
+    license_info={
+        "name": "MIT",
+        "identifier": "MIT",
+    },
+    openapi_tags=[
+        {
+            "name": "nodes",
+            "description": "Operations with network nodes, including discovery and status",
+        },
+        {
+            "name": "pages",
+            "description": "Load and retrieve page content from nodes",
+        },
+        {
+            "name": "status",
+            "description": "API and network status information",
+        },
+    ],
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
 
 
 # Setup logging
@@ -36,12 +85,6 @@ def setup_logging(debug=False):
     return logger
 
 
-class MessageRequest(BaseModel):
-    destination: str
-    message: str
-    title: Optional[str] = "Reply"
-
-
 class PageRequest(BaseModel):
     destination_hash: str
     page_path: str
@@ -63,7 +106,6 @@ class Announce(BaseModel):
     updated_at: int
 
 
-app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000"],
@@ -483,7 +525,7 @@ async def root():
     return {"status": "running", "address": RNS.prettyhexrep(lxmf_instance.local.hash)}
 
 
-@v1_router.get("/nodes")
+@v1_router.get("/nodes", tags=["nodes"])
 async def get_nodes():
     """Get all LXMF announces and saved nodes"""
     announces = await lxmf_instance.get_announces("lxmf.delivery")
@@ -511,25 +553,16 @@ async def get_nodes():
     return combined
 
 
-@v1_router.get("/status")
+@v1_router.get("/status", tags=["status"])
 async def get_status():
     return {
         "status": "Connected",
         "address": RNS.prettyhexrep(lxmf_instance.local.hash),
-        "queue_size": lxmf_instance.queue.qsize(),
-        "receipts_count": len(lxmf_instance.receipts),
         "nodes_count": len(lxmf_instance.nodes),
     }
 
 
-@v1_router.post("/send")
-async def send_message(message_request: MessageRequest):
-    return lxmf_instance.send(
-        message_request.destination, message_request.message, message_request.title
-    )
-
-
-@v1_router.post("/page")
+@v1_router.post("/page", tags=["pages"])
 async def get_page(page_request: PageRequest):
     try:
         response = await lxmf_instance.download_page(
@@ -564,7 +597,6 @@ def main():
     if args.debug:
         logger.debug("Debug logging enabled")
 
-    # Start the FastAPI application
     import uvicorn
 
     uvicorn.run(
