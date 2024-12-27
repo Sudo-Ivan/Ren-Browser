@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "ren_api"}]
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.10"
 rns = "^0.8.8"
 lxmf = "^0.5.8"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
