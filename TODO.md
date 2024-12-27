@@ -10,7 +10,7 @@
   - [ ] Lists support
   - [ ] Links support
 - [ ] HTML + CSS renderer (search for at address:/page/index.html)
-- [ ] File downloads from nodes
+- [ ] File downloading from nodes (:/files/)
 
 ## UI/UX Improvements
 - [ ] Bookmarks system
