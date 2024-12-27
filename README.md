@@ -9,6 +9,18 @@ Uses [Iced](https://iced.rs/) GUI (Rust) and [FastAPI](https://fastapi.tiangolo.
 
 See [TODO.md](TODO.md).
 
+## Features
+
+- Micron Renderer
+- Plain Text Renderer (fallback)
+- HTML Renderer (future)
+- Page Caching
+
+
+## Keybindings
+
+- `Ctrl+R` to reload a page
+
 ## Requirements
 ```
 Python 3.13
