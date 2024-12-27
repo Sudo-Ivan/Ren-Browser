@@ -15,8 +15,8 @@ use std::env;
 
 mod styles;
 use styles::{
-    Styles, BORDER_RADIUS, CONTENT_PADDING, HEADING_SIZE, PADDING, SIDEBAR_WIDTH, SPACING,
-    SPINNER_BORDER, SPINNER_SIZE, TAB_HEIGHT, TEXT_SIZE,
+    Styles, BORDER_RADIUS, CLOSE_BUTTON_SIZE, CONTENT_PADDING, HEADING_SIZE, PADDING,
+    SIDEBAR_WIDTH, SPACING, SPINNER_BORDER, SPINNER_SIZE, TAB_HEIGHT, TEXT_SIZE,
 };
 
 mod api;
@@ -71,6 +71,7 @@ struct Tab {
     show_address: bool,
     rendered_content: Vec<(String, MicronStyle)>,
     renderer_type: RendererType,
+    display_name: Option<String>,
 }
 
 impl Tab {
@@ -78,11 +79,12 @@ impl Tab {
         Self {
             id,
             address: String::new(),
-            content: String::new(),
+            content: String::from("Welcome to Ren Browser"),
             loading: false,
             show_address: true,
             rendered_content: Vec::new(),
             renderer_type: RendererType::default(),
+            display_name: None,
         }
     }
 }
@@ -111,6 +113,7 @@ enum Message {
     ContentLoaded(String),
     Shortcut(Shortcut),
     ReloadPage,
+    FetchNodes,
 }
 
 impl Message {
@@ -139,6 +142,7 @@ impl Application for RenBrowser {
             show_address: true,
             rendered_content: Vec::new(),
             renderer_type: RendererType::default(),
+            display_name: None,
         };
 
         (
@@ -176,6 +180,7 @@ impl Application for RenBrowser {
                     show_address: true,
                     rendered_content: Vec::new(),
                     renderer_type: RendererType::default(),
+                    display_name: None,
                 });
                 self.active_tab = self.tabs.len() - 1;
                 self.next_tab_id += 1;
@@ -210,7 +215,11 @@ impl Application for RenBrowser {
             }
             Message::AddressInputChanged(address) => {
                 debug!("Address input changed: {}", address);
-                self.address_input = address;
+                self.address_input = address.clone();
+                if address.ends_with("/index.mu") {
+                    // Automatically load the page if it's a node click
+                    return Command::batch(vec![Command::perform(async {}, |_| Message::LoadPage)]);
+                }
                 Command::none()
             }
             Message::LoadPage => {
@@ -258,6 +267,13 @@ impl Application for RenBrowser {
                             tab.content = content.clone();
                             tab.show_address = false;
 
+                            // Try to find node info to get display name
+                            if let Some(node) = self.nodes.iter().find(|n| {
+                                n.destination_hash == tab.address.split(':').next().unwrap_or("")
+                            }) {
+                                tab.display_name = node.display_name.clone();
+                            }
+
                             let mut renderer = MicronRenderer::new();
                             tab.rendered_content = renderer.parse(&content);
                             debug!("Content rendered");
@@ -290,6 +306,7 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
+            Message::FetchNodes => fetch_nodes().map(Message::from_lib),
         }
     }
 
@@ -325,9 +342,10 @@ impl Application for RenBrowser {
                                 )
                                 .style(Styles::node_button())
                                 .width(Length::Fill)
-                                .on_press(Message::AddressInputChanged(
-                                    node.destination_hash.clone(),
-                                ))
+                                .on_press(Message::AddressInputChanged(format!(
+                                    "{}:/page/index.mu",
+                                    node.destination_hash
+                                )))
                                 .into()
                             })
                             .collect()
@@ -367,41 +385,57 @@ impl Application for RenBrowser {
                         {
                             &tab.address
                         } else {
-                            tab.address.split('/').last().unwrap_or("New Tab")
+                            tab.display_name.as_deref().unwrap_or_else(|| {
+                                tab.address.split('/').last().unwrap_or("New Tab")
+                            })
                         }
                     } else {
                         if tab.address.is_empty() {
                             "New Tab"
                         } else {
-                            &tab.address
+                            tab.display_name.as_deref().unwrap_or(&tab.address)
                         }
                     };
 
                     button(
                         row![
-                            text(tab_text).size(TEXT_SIZE),
-                            button(text("×"))
-                                .on_press(Message::CloseTab(tab.id))
-                                .style(theme::Button::Text)
+                            container(text(tab_text).size(TEXT_SIZE))
+                                .width(Length::Fill)
+                                .center_x()
+                                .center_y(),
+                            container(
+                                button(text("×").size(CLOSE_BUTTON_SIZE))
+                                    .on_press(Message::CloseTab(tab.id))
+                                    .style(Styles::close_button())
+                            )
+                            .width(Length::Shrink)
+                            .center_y()
+                            .padding([0, 5])
                         ]
-                        .spacing(5),
+                        .spacing(5)
+                        .width(Length::Fill)
+                        .align_items(Alignment::Center),
                     )
                     .on_press(Message::SelectTab(tab.id))
                     .style(Styles::tab_button(
                         self.active_tab
                             == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0),
                     ))
+                    .width(Length::Fixed(150.0))
                     .height(Length::Fixed(TAB_HEIGHT as f32))
                     .padding([2, 8])
                     .into()
                 })
                 .chain(std::iter::once(
-                    button(text("+"))
-                        .on_press(Message::AddTab)
-                        .style(theme::Button::Secondary)
-                        .padding([2, 8])
-                        .height(Length::Fixed(TAB_HEIGHT as f32))
-                        .into(),
+                    container(
+                        button(text("+").size(TEXT_SIZE + 2))
+                            .on_press(Message::AddTab)
+                            .style(Styles::new_tab_button())
+                            .padding([2, 8]),
+                    )
+                    .center_y()
+                    .height(Length::Fixed(TAB_HEIGHT as f32))
+                    .into(),
                 ))
                 .collect(),
         )
@@ -553,6 +587,7 @@ impl Application for RenBrowser {
                 }
             }),
             time::every(std::time::Duration::from_secs(30)).map(|_| Message::Tick),
+            time::every(std::time::Duration::from_secs(5)).map(|_| Message::FetchNodes),
         ])
     }
 }

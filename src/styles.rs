@@ -43,6 +43,14 @@ impl Styles {
     pub fn spinner() -> iced::theme::Container {
         iced::theme::Container::Custom(Box::new(SpinnerStyle))
     }
+
+    pub fn close_button() -> iced::theme::Button {
+        iced::theme::Button::Custom(Box::new(CloseButtonStyle))
+    }
+
+    pub fn new_tab_button() -> iced::theme::Button {
+        iced::theme::Button::Custom(Box::new(NewTabButtonStyle))
+    }
 }
 
 struct NodeButtonStyle;
@@ -82,12 +90,21 @@ impl button::StyleSheet for NodeButtonStyle {
             border_radius: 4.0.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
+            text_color: Color::WHITE,
             ..Default::default()
+        }
+    }
+
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        let active = self.active(style);
+        button::Appearance {
+            background: Some(iced::Background::Color(Color::from_rgb(0.2, 0.2, 0.2))),
+            ..active
         }
     }
 }
 
-pub const SIDEBAR_WIDTH: f32 = 200.0;
+pub const SIDEBAR_WIDTH: f32 = 250.0;
 pub const PADDING: u16 = 20;
 pub const SPACING: u16 = 10;
 pub const TEXT_SIZE: u16 = 14;
@@ -97,6 +114,7 @@ pub const CONTENT_PADDING: u16 = 30;
 pub const BORDER_RADIUS: f32 = 8.0;
 pub const SPINNER_SIZE: f32 = 24.0;
 pub const SPINNER_BORDER: f32 = 2.5;
+pub const CLOSE_BUTTON_SIZE: u16 = TEXT_SIZE + 4;
 
 pub struct SpinnerStyle;
 
@@ -112,6 +130,55 @@ impl container::StyleSheet for SpinnerStyle {
                 0.0, 0.0, 0.0, 0.2,
             ))),
             ..Default::default()
+        }
+    }
+}
+
+struct CloseButtonStyle;
+struct NewTabButtonStyle;
+
+impl button::StyleSheet for CloseButtonStyle {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: None,
+            border_radius: 0.0.into(),
+            border_width: 0.0,
+            border_color: Color::TRANSPARENT,
+            text_color: Color::from_rgb(0.7, 0.7, 0.7),
+            ..Default::default()
+        }
+    }
+
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        let active = self.active(style);
+        button::Appearance {
+            text_color: Color::WHITE,
+            ..active
+        }
+    }
+}
+
+impl button::StyleSheet for NewTabButtonStyle {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: None,
+            border_radius: 0.0.into(),
+            border_width: 0.0,
+            border_color: Color::TRANSPARENT,
+            text_color: Color::from_rgb(0.7, 0.7, 0.7),
+            ..Default::default()
+        }
+    }
+
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        let active = self.active(style);
+        button::Appearance {
+            text_color: Color::WHITE,
+            ..active
         }
     }
 }
