@@ -47,4 +47,4 @@ impl PageCache {
     pub fn remove(&mut self, url: &str) {
         self.cache.remove(url);
     }
-} 
+}

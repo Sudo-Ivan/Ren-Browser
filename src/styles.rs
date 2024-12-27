@@ -87,7 +87,7 @@ impl button::StyleSheet for NodeButtonStyle {
     fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             background: Some(iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15))),
-            border_radius: 4.0.into(),
+            border_radius: 6.0.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             text_color: Color::WHITE,
@@ -104,13 +104,13 @@ impl button::StyleSheet for NodeButtonStyle {
     }
 }
 
-pub const SIDEBAR_WIDTH: f32 = 250.0;
+pub const SIDEBAR_WIDTH: f32 = 300.0;
 pub const PADDING: u16 = 20;
-pub const SPACING: u16 = 10;
+pub const SPACING: u16 = 12;
 pub const TEXT_SIZE: u16 = 14;
 pub const HEADING_SIZE: u16 = 20;
 pub const TAB_HEIGHT: u16 = 32;
-pub const CONTENT_PADDING: u16 = 30;
+pub const CONTENT_PADDING: u16 = 35;
 pub const BORDER_RADIUS: f32 = 8.0;
 pub const SPINNER_SIZE: f32 = 24.0;
 pub const SPINNER_BORDER: f32 = 2.5;

@@ -1,5 +1,5 @@
 use iced::Color;
-use log::debug;
+use log::{debug, warn};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TextAlignment {
@@ -7,6 +7,26 @@ pub enum TextAlignment {
     Center,
     Right,
     Default,
+}
+
+// Separate style for links to avoid recursion
+#[derive(Debug, Clone)]
+pub struct LinkStyle {
+    pub bold: bool,
+    pub italic: bool,
+    pub underline: bool,
+    pub foreground: Option<Color>,
+    pub background: Option<Color>,
+    pub section_depth: u8,
+    pub alignment: TextAlignment,
+    pub selectable: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct Link {
+    pub label: String,
+    pub url: String,
+    pub style: LinkStyle,
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +39,7 @@ pub struct MicronStyle {
     pub section_depth: u8,
     pub alignment: TextAlignment,
     pub selectable: bool,
+    pub link: Option<Box<Link>>, // Use Box to break the recursion
 }
 
 impl Default for MicronStyle {
@@ -32,6 +53,7 @@ impl Default for MicronStyle {
             section_depth: 0,
             alignment: TextAlignment::Default,
             selectable: true,
+            link: None,
         }
     }
 }
@@ -132,7 +154,12 @@ impl MicronRenderer {
                 // Handle section depth reset
                 if line.starts_with('<') {
                     state.style.section_depth = 0;
-                    self.parse_line(&line[1..], &mut state, &mut styled_content, preserve_whitespace)?;
+                    self.parse_line(
+                        &line[1..],
+                        &mut state,
+                        &mut styled_content,
+                        preserve_whitespace,
+                    )?;
                     continue;
                 }
 
@@ -150,7 +177,12 @@ impl MicronRenderer {
                         _ => Color::from_rgb(0.33, 0.33, 0.33),
                     });
 
-                    self.parse_line(&line[depth..], &mut state, &mut styled_content, preserve_whitespace)?;
+                    self.parse_line(
+                        &line[depth..],
+                        &mut state,
+                        &mut styled_content,
+                        preserve_whitespace,
+                    )?;
                     state.style = prev_style;
                     continue;
                 }
@@ -162,14 +194,14 @@ impl MicronRenderer {
                     } else {
                         '─'
                     };
-                    
+
                     // Support custom width dividers
                     let width = if line.len() > 2 {
                         line[2..].parse::<usize>().unwrap_or(80)
                     } else {
                         80
                     };
-                    
+
                     let line = divider.to_string().repeat(width);
                     styled_content.push((format!("{}\n", line), state.style.clone()));
                     continue;
@@ -226,6 +258,58 @@ impl MicronRenderer {
                         current_text.push(next);
                     }
                 }
+                '[' => {
+                    // Handle link parsing
+                    if !current_text.is_empty() {
+                        styled_content.push((current_text.clone(), state.style.clone()));
+                        current_text.clear();
+                    }
+
+                    let mut link_text = String::new();
+                    let mut link_url = String::new();
+                    let mut in_url = false;
+
+                    while let Some(lc) = chars.next() {
+                        match lc {
+                            '`' => {
+                                in_url = true;
+                                continue;
+                            }
+                            ']' => {
+                                break;
+                            }
+                            _ => {
+                                if in_url {
+                                    link_url.push(lc);
+                                } else {
+                                    link_text.push(lc);
+                                }
+                            }
+                        }
+                    }
+
+                    // Create link style
+                    let mut link_style = state.style.clone();
+                    link_style.foreground = Some(Color::from_rgb(0.4, 0.6, 1.0));
+                    link_style.underline = true;
+                    link_style.link = Some(Box::new(Link {
+                        label: link_text.clone(),
+                        url: link_url,
+                        style: LinkStyle {
+                            // Convert MicronStyle to LinkStyle
+                            bold: state.style.bold,
+                            italic: state.style.italic,
+                            underline: state.style.underline,
+                            foreground: state.style.foreground,
+                            background: state.style.background,
+                            section_depth: state.style.section_depth,
+                            alignment: state.style.alignment,
+                            selectable: state.style.selectable,
+                        },
+                    }));
+
+                    styled_content.push((link_text, link_style));
+                }
                 '`' => {
                     if !current_text.is_empty() {
                         styled_content.push((current_text.clone(), state.style.clone()));
@@ -273,6 +357,22 @@ impl MicronRenderer {
         }
 
         Ok(())
+    }
+
+    // Helper method to check if a string is a valid node path
+    fn is_node_path(url: &str) -> bool {
+        url.ends_with(".mu") || url.starts_with(":/")
+    }
+
+    // Helper method to format node URLs
+    fn format_node_url(url: &str) -> String {
+        if url.starts_with(":/") {
+            format!("{}", &url[2..])
+        } else if !url.contains(":/") {
+            format!("page/{}", url)
+        } else {
+            url.to_string()
+        }
     }
 }
 

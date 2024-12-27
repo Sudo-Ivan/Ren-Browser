@@ -119,6 +119,7 @@ enum Message {
     Shortcut(Shortcut),
     ReloadPage,
     FetchNodes,
+    LinkClicked(String),
 }
 
 impl Message {
@@ -140,7 +141,7 @@ impl Application for RenBrowser {
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
         let initial_tab = Tab::new(0);
-        
+
         (
             RenBrowser {
                 tabs: vec![initial_tab],
@@ -224,19 +225,20 @@ impl Application for RenBrowser {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
                     tab.address = self.address_input.clone();
-                    
+
                     // Check cache first
                     if let Some(cached_content) = self.page_cache.get(&tab.address) {
                         tab.loading = false;
                         tab.content = cached_content.clone();
                         tab.show_address = false;
-                        
+
                         let mut renderer = MicronRenderer::new();
                         if tab.address.ends_with(".mu") {
                             tab.rendered_content = renderer.parse(&tab.content);
                             tab.renderer_type = renderer.get_renderer_type();
                         } else {
-                            tab.rendered_content = vec![(tab.content.clone(), MicronStyle::default())];
+                            tab.rendered_content =
+                                vec![(tab.content.clone(), MicronStyle::default())];
                             tab.renderer_type = RendererType::Plain;
                         }
                         Command::none()
@@ -281,7 +283,7 @@ impl Application for RenBrowser {
                         Ok(content) => {
                             // Cache the content
                             self.page_cache.set(tab.address.clone(), content.clone());
-                            
+
                             tab.content = content.clone();
                             tab.show_address = false;
 
@@ -308,7 +310,7 @@ impl Application for RenBrowser {
                         Err(e) => {
                             // Remove from cache if there was an error
                             self.page_cache.remove(&tab.address);
-                            
+
                             let error_msg = format!("Error loading page: {}", e);
                             debug!("Page load error: {}", error_msg);
                             tab.content = error_msg.clone();
@@ -340,6 +342,14 @@ impl Application for RenBrowser {
                 Command::none()
             }
             Message::FetchNodes => fetch_nodes().map(Message::from_lib),
+            Message::LinkClicked(url) => {
+                if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                    tab.loading = true;
+                    tab.address = url;
+                    return fetch_page(tab.address.clone());
+                }
+                Command::none()
+            }
         }
     }
 
@@ -435,13 +445,16 @@ impl Application for RenBrowser {
                                 button(text("×").size(CLOSE_BUTTON_SIZE))
                                     .on_press(Message::CloseTab(tab.id))
                                     .style(Styles::close_button())
+                                    .padding(0)
                             )
                             .width(Length::Shrink)
+                            .height(Length::Fill)
                             .center_y()
                             .padding([0, 5])
                         ]
                         .spacing(5)
                         .width(Length::Fill)
+                        .height(Length::Fill)
                         .align_items(Alignment::Center),
                     )
                     .on_press(Message::SelectTab(tab.id))
@@ -504,53 +517,42 @@ impl Application for RenBrowser {
                 .center_x()
                 .center_y()
             } else {
-                container(column![
+                container(
                     scrollable(
-                        column(
+                        Column::with_children(
                             tab.rendered_content
                                 .iter()
                                 .map(|(content, style)| {
-                                    let mut text_el = text(content).size(TEXT_SIZE);
+                                    let text_el = text(content).size(TEXT_SIZE);
 
-                                    if let Some(color) = style.foreground {
-                                        text_el = text_el.style(theme::Text::Color(color));
+                                    if let Some(link) = &style.link {
+                                        button(text_el.style(theme::Text::Color(Color::from_rgb(
+                                            0.4, 0.6, 1.0,
+                                        ))))
+                                        .on_press(Message::LinkClicked(link.url.clone()))
+                                        .style(theme::Button::Text)
+                                        .into()
                                     } else {
-                                        text_el =
-                                            text_el.style(theme::Text::Color(Styles::text_color()));
-                                    }
+                                        let styled_text = if let Some(color) = style.foreground {
+                                            text_el.style(theme::Text::Color(color))
+                                        } else {
+                                            text_el
+                                        };
 
-                                    let mut container = container(text_el);
+                                        let aligned_container =
+                                            match style.alignment {
+                                                TextAlignment::Center => container(styled_text)
+                                                    .align_x(Horizontal::Center),
+                                                TextAlignment::Right => container(styled_text)
+                                                    .align_x(Horizontal::Right),
+                                                TextAlignment::Left => {
+                                                    container(styled_text).align_x(Horizontal::Left)
+                                                }
+                                                TextAlignment::Default => container(styled_text),
+                                            };
 
-                                    if let Some(bg) = style.background {
-                                        container = container.style(move |_theme: &Theme| {
-                                            container::Appearance {
-                                                background: Some(bg.into()),
-                                                ..Default::default()
-                                            }
-                                        });
+                                        aligned_container.width(Length::Fill).into()
                                     }
-
-                                    if style.bold {
-                                        container = container.style(|_theme: &Theme| {
-                                            container::Appearance {
-                                                text_color: Some(Color::WHITE),
-                                                ..Default::default()
-                                            }
-                                        });
-                                    }
-
-                                    match style.alignment {
-                                        TextAlignment::Center => {
-                                            container.align_x(Horizontal::Center)
-                                        }
-                                        TextAlignment::Right => {
-                                            container.align_x(Horizontal::Right)
-                                        }
-                                        TextAlignment::Left => container.align_x(Horizontal::Left),
-                                        TextAlignment::Default => container,
-                                    }
-                                    .width(Length::Fill)
-                                    .into()
                                 })
                                 .collect(),
                         )
@@ -559,40 +561,15 @@ impl Application for RenBrowser {
                         .width(Length::Fill),
                     )
                     .height(Length::Fill),
-                    container(
-                        text(if let Some(tab) = self.tabs.get(self.active_tab) {
-                            match tab.renderer_type {
-                                RendererType::Micron => "Micron Renderer",
-                                RendererType::Plain => "Plain Text Renderer",
-                            }
-                        } else {
-                            "No Renderer"
-                        })
-                        .size(TEXT_SIZE - 2)
-                        .style(Styles::renderer_text())
-                    )
-                    .width(Length::Fill)
-                    .align_x(Horizontal::Right)
-                    .padding([0, CONTENT_PADDING])
-                ])
-                .style(|_theme: &Theme| container::Appearance {
-                    background: Some(Styles::content_container()),
-                    border_radius: BORDER_RADIUS.into(),
-                    ..Default::default()
-                })
-                .padding(PADDING)
+                )
+                .width(Length::Fill)
+                .into()
             }
         } else {
-            container(
-                scrollable(column![text("No tab selected")].padding(CONTENT_PADDING))
-                    .height(Length::Fill),
-            )
-            .style(|_theme: &Theme| container::Appearance {
-                background: Some(Styles::content_container()),
-                border_radius: BORDER_RADIUS.into(),
-                ..Default::default()
-            })
-            .padding(PADDING)
+            container(text("No tab selected"))
+                .width(Length::Fill)
+                .center_x()
+                .into()
         };
 
         let main_content = column![tab_bar, address_bar, content]

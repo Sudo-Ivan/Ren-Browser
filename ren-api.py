@@ -382,7 +382,6 @@ class LXMFHandler:
         try:
             dest_hash_bytes = bytes.fromhex(destination_hash)
 
-            # Create destination with correct app name and aspects
             identity = RNS.Identity.recall(dest_hash_bytes)
             if not identity:
                 raise HTTPException(status_code=404, detail="Identity not found")
@@ -391,11 +390,10 @@ class LXMFHandler:
                 identity,
                 RNS.Destination.OUT,
                 RNS.Destination.SINGLE,
-                "nomadnetwork",  # Changed from lxmf
-                "node",  # Added aspect
+                "nomadnetwork",
+                "node",
             )
 
-            # Use existing link or create new one
             link = None
             if dest_hash_bytes in self.cached_links:
                 link = self.cached_links[dest_hash_bytes]
@@ -415,12 +413,10 @@ class LXMFHandler:
 
                 self.cached_links[dest_hash_bytes] = link
 
-            # Prepare request data
             request_data = {"request": "page", "path": page_path}
             if field_data:
                 request_data["data"] = field_data
 
-            # Create Future for response
             response_future = asyncio.Future()
 
             def on_response(request_receipt):
@@ -435,7 +431,6 @@ class LXMFHandler:
                 if not response_future.done():
                     response_future.set_exception(Exception("Request failed"))
 
-            # Request over link with callbacks
             link.request(
                 page_path,
                 data=field_data,
