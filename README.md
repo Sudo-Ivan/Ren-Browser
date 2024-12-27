@@ -55,7 +55,6 @@ v1 API Routes:
 /api/v1/status
 /api/v1/nodes
 /api/v1/page
-/api/v1/send
 ```
 
 ### Libraries Used
