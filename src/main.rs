@@ -88,7 +88,37 @@ impl Tab {
             show_address: true,
             rendered_content: Vec::new(),
             renderer_type: RendererType::default(),
-            display_name: None,
+            display_name: Some("New Tab".to_string()),
+        }
+    }
+
+    fn settings() -> Self {
+        Self {
+            id: 0,
+            address: String::from("settings"),
+            content: String::new(),
+            loading: false,
+            show_address: false,
+            rendered_content: vec![
+                ("Settings".to_string(), MicronStyle { 
+                    alignment: TextAlignment::Center,
+                    foreground: None,
+                    link: None,
+                    background: None,
+                    bold: false,
+                    italic: false,
+                    underline: false,
+                    section_depth: 0,
+                    selectable: true,
+                }),
+                ("\nKeyboard Shortcuts:".to_string(), MicronStyle::default()),
+                ("F11: Open Settings".to_string(), MicronStyle::default()),
+                ("Ctrl+R: Reload Page".to_string(), MicronStyle::default()),
+                ("Ctrl+T: New Tab".to_string(), MicronStyle::default()),
+                ("Ctrl+W: Close Tab".to_string(), MicronStyle::default()),
+            ],
+            renderer_type: RendererType::Plain,
+            display_name: Some("Settings".to_string()),
         }
     }
 }
@@ -122,6 +152,7 @@ enum Message {
     FetchNodes,
     LinkClicked(String),
     NodeSearchChanged(String),
+    OpenSettings,
 }
 
 impl Message {
@@ -356,6 +387,20 @@ impl Application for RenBrowser {
             Message::NodeSearchChanged(search) => {
                 self.node_search = search;
                 Command::none()
+            }
+            Message::OpenSettings => {
+                // Check if settings tab already exists
+                if let Some(index) = self.tabs.iter().position(|tab| tab.address == "settings") {
+                    self.active_tab = index;
+                } else {
+                    let settings_tab = Tab::settings();
+                    self.tabs.push(settings_tab);
+                    self.active_tab = self.tabs.len() - 1;
+                }
+                Command::none()
+            }
+            Message::Shortcut(Shortcut::OpenSettings) => {
+                self.update(Message::OpenSettings)
             }
         }
     }

@@ -11,4 +11,5 @@ pub enum Message {
     ApiStatusReceived(Box<Result<ApiStatus, String>>),
     NodesUpdated(Box<Result<Vec<Node>, String>>),
     PageLoaded(Box<Result<String, String>>),
+    OpenSettings,
 }
