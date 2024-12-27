@@ -1,6 +1,6 @@
 import os, time, base64, asyncio, json, logging
 import RNS
-from LXMF import LXMRouter
+from LXMF import LXMRouter, LXMessage
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from queue import Queue
@@ -12,7 +12,7 @@ import argparse
 import msgpack
 
 description = """
-Ren Browser API helps you browse the Reticulum Network Stack.
+Ren API helps you browse the Reticulum Network Stack.
 
 ## Features
 
@@ -128,7 +128,7 @@ class AnnounceHandler:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
