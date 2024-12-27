@@ -2,6 +2,7 @@ use log::debug;
 use reqwest;
 use serde::Deserialize;
 use serde_json;
+use crate::Message;
 
 // API constants
 pub const API_HOST: &str = "http://localhost:8000";
@@ -23,7 +24,7 @@ pub struct ApiStatus {
     pub address: String,
 }
 
-pub fn fetch_api_status() -> iced::Command<crate::Message> {
+pub fn fetch_api_status() -> iced::Command<Message> {
     iced::Command::perform(
         async {
             match reqwest::get(&format!("{}/api/{}/status", API_HOST, API_VERSION)).await {
@@ -34,11 +35,11 @@ pub fn fetch_api_status() -> iced::Command<crate::Message> {
                 Err(e) => Err(e.to_string()),
             }
         },
-        |result| crate::Message::ApiStatusReceived(Box::new(result)),
+        |result| Message::ApiStatusReceived(Box::new(result)),
     )
 }
 
-pub fn fetch_nodes() -> iced::Command<crate::Message> {
+pub fn fetch_nodes() -> iced::Command<Message> {
     iced::Command::perform(
         async {
             match reqwest::get(&format!("{}/api/{}/nodes", API_HOST, API_VERSION)).await {
@@ -49,11 +50,11 @@ pub fn fetch_nodes() -> iced::Command<crate::Message> {
                 Err(e) => Err(e.to_string()),
             }
         },
-        |result| crate::Message::NodesUpdated(Box::new(result)),
+        |result| Message::NodesUpdated(Box::new(result)),
     )
 }
 
-pub fn fetch_page(address: String) -> iced::Command<crate::Message> {
+pub fn fetch_page(address: String) -> iced::Command<Message> {
     debug!("Fetching page: {}", address);
     iced::Command::perform(
         async move {
@@ -100,7 +101,7 @@ pub fn fetch_page(address: String) -> iced::Command<crate::Message> {
         },
         |result| {
             debug!("Page fetch result: {:?}", result);
-            crate::Message::PageLoaded(Box::new(result))
+            Message::PageLoaded(Box::new(result))
         },
     )
 }

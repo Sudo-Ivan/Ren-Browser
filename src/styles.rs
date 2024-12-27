@@ -26,6 +26,18 @@ impl Styles {
     pub fn muted_text() -> Color {
         Color::from_rgb(0.5, 0.5, 0.5)
     }
+
+    pub fn text_color() -> Color {
+        Color::WHITE
+    }
+
+    pub fn text_color_muted() -> Color {
+        Color::from_rgb(0.7, 0.7, 0.7)
+    }
+
+    pub fn renderer_text() -> Color {
+        Color::from_rgb(0.4, 0.4, 0.4)
+    }
 }
 
 struct NodeButtonStyle;

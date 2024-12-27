@@ -1,6 +1,7 @@
 use iced::{
-    alignment::Alignment,
-    executor, theme, time,
+    alignment::{Alignment, Horizontal},
+    event::{self, Event},
+    executor, keyboard, theme, time,
     widget::{button, column, container, row, scrollable, text, text_input, Row},
     Application, Command, Element, Length, Settings, Subscription, Theme,
 };
@@ -18,6 +19,15 @@ use styles::{
 
 mod api;
 use api::{fetch_api_status, fetch_nodes, fetch_page, ApiStatus, Node};
+
+mod renderers;
+use renderers::mu_renderer::{MicronRenderer, MicronStyle, TextAlignment};
+
+mod shortcuts;
+use renderers::mu_renderer::RendererType;
+use shortcuts::{handle_shortcut, Shortcut};
+
+use crate::Message as LibMessage;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -57,6 +67,22 @@ struct Tab {
     content: String,
     loading: bool,
     show_address: bool,
+    rendered_content: Vec<(String, MicronStyle)>,
+    renderer_type: RendererType,
+}
+
+impl Tab {
+    fn new(id: usize) -> Self {
+        Self {
+            id,
+            address: String::new(),
+            content: String::new(),
+            loading: false,
+            show_address: true,
+            rendered_content: Vec::new(),
+            renderer_type: RendererType::default(),
+        }
+    }
 }
 
 struct RenBrowser {
@@ -80,6 +106,20 @@ enum Message {
     PageLoaded(Box<Result<String, String>>),
     ShowAddressBar,
     Tick,
+    ContentLoaded(String),
+    Shortcut(Shortcut),
+    ReloadPage,
+}
+
+impl Message {
+    fn from_lib(msg: LibMessage) -> Self {
+        match msg {
+            LibMessage::ApiStatusReceived(result) => Message::ApiStatusReceived(result),
+            LibMessage::NodesUpdated(result) => Message::NodesUpdated(result),
+            LibMessage::PageLoaded(result) => Message::PageLoaded(result),
+            _ => Message::AddTab,
+        }
+    }
 }
 
 impl Application for RenBrowser {
@@ -95,6 +135,8 @@ impl Application for RenBrowser {
             content: String::from("Welcome to Ren Browser"),
             loading: false,
             show_address: true,
+            rendered_content: Vec::new(),
+            renderer_type: RendererType::default(),
         };
 
         (
@@ -109,7 +151,7 @@ impl Application for RenBrowser {
                 },
                 next_tab_id: 1,
             },
-            Command::batch(vec![fetch_api_status(), fetch_nodes()]),
+            Command::batch(vec![fetch_api_status().map(Message::from_lib), fetch_nodes().map(Message::from_lib)]),
         )
     }
 
@@ -127,6 +169,8 @@ impl Application for RenBrowser {
                     content: String::from("New Tab"),
                     loading: false,
                     show_address: true,
+                    rendered_content: Vec::new(),
+                    renderer_type: RendererType::default(),
                 });
                 self.active_tab = self.tabs.len() - 1;
                 self.next_tab_id += 1;
@@ -194,19 +238,46 @@ impl Application for RenBrowser {
                     tab.loading = false;
                     match *result {
                         Ok(content) => {
-                            tab.content = content;
+                            tab.content = content.clone();
                             tab.show_address = false;
+
+                            let mut renderer = MicronRenderer::new();
+                            tab.rendered_content = renderer.parse(&content);
+                            debug!("Content rendered");
                         }
                         Err(e) => {
-                            tab.content = format!("Error loading page: {}", e);
+                            let error_msg = format!("Error loading page: {}", e);
+                            tab.content = error_msg.clone();
                             tab.show_address = true;
+                            tab.rendered_content = vec![(error_msg, MicronStyle::default())];
                         }
                     }
                 }
                 Command::none()
             }
             Message::ShowAddressBar => Command::none(),
-            Message::Tick => fetch_nodes(),
+            Message::Tick => Command::none(),
+            Message::ContentLoaded(content) => {
+                if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                    tab.content = content.clone();
+                    let mut renderer = MicronRenderer::new();
+                    tab.rendered_content = renderer.parse(&content);
+                    tab.loading = false;
+                }
+                Command::none()
+            }
+            Message::Shortcut(Shortcut::Reload) => {
+                if let Some(tab) = self.tabs.get(self.active_tab) {
+                    return fetch_page(tab.address.clone());
+                }
+                Command::none()
+            }
+            Message::ReloadPage => {
+                if let Some(tab) = self.tabs.get(self.active_tab) {
+                    return fetch_page(tab.address.clone());
+                }
+                Command::none()
+            }
         }
     }
 
@@ -346,14 +417,55 @@ impl Application for RenBrowser {
         };
 
         let content = if let Some(tab) = self.tabs.get(self.active_tab) {
-            container(
+            container(column![
                 scrollable(
-                    column![text(&tab.content).size(14)]
-                        .padding(CONTENT_PADDING)
-                        .width(Length::Fill),
+                    column(
+                        tab.rendered_content
+                            .iter()
+                            .map(|(content, style)| {
+                                let mut text_el = text(content);
+                                text_el = text_el.size(TEXT_SIZE);
+
+                                if let Some(color) = style.foreground {
+                                    text_el = text_el.style(color);
+                                } else {
+                                    text_el = text_el.style(Styles::text_color());
+                                }
+
+                                let container = container(text_el);
+
+                                match style.alignment {
+                                    TextAlignment::Center => container.align_x(Horizontal::Center),
+                                    TextAlignment::Right => container.align_x(Horizontal::Right),
+                                    TextAlignment::Left => container.align_x(Horizontal::Left),
+                                    TextAlignment::Default => container,
+                                }
+                                .width(Length::Fill)
+                                .into()
+                            })
+                            .collect(),
+                    )
+                    .spacing(SPACING)
+                    .padding(CONTENT_PADDING)
+                    .width(Length::Fill),
                 )
                 .height(Length::Fill),
-            )
+                container(
+                    text(if let Some(tab) = self.tabs.get(self.active_tab) {
+                        match tab.renderer_type {
+                            RendererType::Micron => "Micron Renderer",
+                            RendererType::Plain => "Plain Text Renderer",
+                        }
+                    } else {
+                        "No Renderer"
+                    })
+                    .size(TEXT_SIZE - 2)
+                    .style(Styles::renderer_text())
+                )
+                .width(Length::Fill)
+                .align_x(Horizontal::Right)
+                .padding([0, CONTENT_PADDING])
+            ])
             .style(|_theme: &Theme| container::Appearance {
                 background: Some(Styles::content_container()),
                 border_radius: BORDER_RADIUS.into(),
@@ -388,6 +500,23 @@ impl Application for RenBrowser {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        time::every(std::time::Duration::from_secs(30)).map(|_| Message::Tick)
+        Subscription::batch(vec![
+            iced::subscription::events_with(|event, status| {
+                if let event::Status::Captured = status {
+                    return None;
+                }
+
+                if let Event::Keyboard(keyboard::Event::KeyPressed { .. }) = event {
+                    if let Some(shortcut) = handle_shortcut(event, keyboard::Modifiers::empty()) {
+                        Some(Message::Shortcut(shortcut))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }),
+            time::every(std::time::Duration::from_secs(30)).map(|_| Message::Tick),
+        ])
     }
 }
