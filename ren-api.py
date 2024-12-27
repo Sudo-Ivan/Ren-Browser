@@ -1,6 +1,6 @@
 import os, time, base64, asyncio, json, logging
 import RNS
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from LXMF import LXMRouter, LXMessage
 from queue import Queue
@@ -473,12 +473,17 @@ async def startup_event():
     lxmf_instance = LXMFHandler()
 
 
-@app.get("/")
+# Create v1 router
+v1_router = APIRouter(prefix="/api/v1")
+
+
+# Move routes to v1
+@v1_router.get("/")
 async def root():
     return {"status": "running", "address": RNS.prettyhexrep(lxmf_instance.local.hash)}
 
 
-@app.get("/nodes")
+@v1_router.get("/nodes")
 async def get_nodes():
     """Get all LXMF announces and saved nodes"""
     announces = await lxmf_instance.get_announces("lxmf.delivery")
@@ -506,7 +511,7 @@ async def get_nodes():
     return combined
 
 
-@app.get("/status")
+@v1_router.get("/status")
 async def get_status():
     return {
         "status": "Connected",
@@ -517,14 +522,14 @@ async def get_status():
     }
 
 
-@app.post("/send")
+@v1_router.post("/send")
 async def send_message(message_request: MessageRequest):
     return lxmf_instance.send(
         message_request.destination, message_request.message, message_request.title
     )
 
 
-@app.post("/page")
+@v1_router.post("/page")
 async def get_page(page_request: PageRequest):
     try:
         response = await lxmf_instance.download_page(
@@ -535,6 +540,10 @@ async def get_page(page_request: PageRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Include router in app
+app.include_router(v1_router)
 
 
 # Update FastAPI app shutdown handler
