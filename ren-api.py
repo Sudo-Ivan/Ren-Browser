@@ -304,8 +304,7 @@ class LXMFHandler:
             receipt = RNS.hexrep(message.hash, delimit=False)
             RNS.log(f"Message receipt <{receipt}>", RNS.LOG_INFO)
 
-            # Update node's last seen time
-            source_name = getattr(message, "source_name", "Unknown")
+            source_name = getattr(message, "source_name", "Anonymous")
             self.update_node(sender, source_name)
 
             if receipt not in self.receipts:
