@@ -1,6 +1,6 @@
 use iced::{
     executor, theme, time,
-    widget::{button, column, row, scrollable, text, text_input, Row},
+    widget::{button, column, container, row, scrollable, text, text_input, Row},
     Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
@@ -12,7 +12,14 @@ use simple_logger::SimpleLogger;
 use std::env;
 
 mod styles;
-use styles::{Styles, HEADING_SIZE, PADDING, SIDEBAR_WIDTH, SPACING, TAB_HEIGHT, TEXT_SIZE};
+use styles::{
+    Styles, BORDER_RADIUS, CONTENT_PADDING, HEADING_SIZE, PADDING, SIDEBAR_WIDTH, SPACING,
+    TAB_HEIGHT, TEXT_SIZE,
+};
+
+// API constants
+const API_HOST: &str = "http://localhost:8000";
+const API_VERSION: &str = "v1";
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
@@ -337,9 +344,31 @@ impl Application for RenBrowser {
         };
 
         let content = if let Some(tab) = self.tabs.get(self.active_tab) {
-            scrollable(column![text(&tab.content).size(14)].padding(20)).height(Length::Fill)
+            container(
+                scrollable(
+                    column![text(&tab.content).size(14)]
+                        .padding(CONTENT_PADDING)
+                        .width(Length::Fill),
+                )
+                .height(Length::Fill),
+            )
+            .style(|_theme: &Theme| container::Appearance {
+                background: Some(Styles::content_container()),
+                border_radius: BORDER_RADIUS.into(),
+                ..Default::default()
+            })
+            .padding(PADDING)
         } else {
-            scrollable(column![text("No tab selected")].padding(20)).height(Length::Fill)
+            container(
+                scrollable(column![text("No tab selected")].padding(CONTENT_PADDING))
+                    .height(Length::Fill),
+            )
+            .style(|_theme: &Theme| container::Appearance {
+                background: Some(Styles::content_container()),
+                border_radius: BORDER_RADIUS.into(),
+                ..Default::default()
+            })
+            .padding(PADDING)
         };
 
         let main_content = column![tab_bar, address_bar, content]
@@ -364,7 +393,7 @@ impl Application for RenBrowser {
 fn fetch_api_status() -> Command<Message> {
     Command::perform(
         async {
-            match reqwest::get("http://localhost:8000/status").await {
+            match reqwest::get(&format!("{}/api/{}/status", API_HOST, API_VERSION)).await {
                 Ok(response) => match response.json::<ApiStatus>().await {
                     Ok(status) => Ok(status),
                     Err(e) => Err(e.to_string()),
@@ -379,7 +408,7 @@ fn fetch_api_status() -> Command<Message> {
 fn fetch_nodes() -> Command<Message> {
     Command::perform(
         async {
-            match reqwest::get("http://localhost:8000/nodes").await {
+            match reqwest::get(&format!("{}/api/{}/nodes", API_HOST, API_VERSION)).await {
                 Ok(response) => match response.json::<Vec<Node>>().await {
                     Ok(nodes) => Ok(nodes),
                     Err(e) => Err(e.to_string()),
@@ -407,7 +436,7 @@ fn fetch_page(address: String) -> Command<Message> {
             let path = parts[1];
 
             match client
-                .post("http://localhost:8000/page")
+                .post(&format!("{}/api/{}/page", API_HOST, API_VERSION))
                 .json(&serde_json::json!({
                     "destination_hash": hash,
                     "page_path": path,

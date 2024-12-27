@@ -18,6 +18,10 @@ impl Styles {
     pub fn tab_button(active: bool) -> iced::theme::Button {
         iced::theme::Button::Custom(Box::new(TabButtonStyle { active }))
     }
+
+    pub fn content_container() -> iced::Background {
+        iced::Background::Color(Color::from_rgb(0.12, 0.12, 0.12))
+    }
 }
 
 struct NodeButtonStyle;
@@ -68,3 +72,5 @@ pub const SPACING: u16 = 10;
 pub const TEXT_SIZE: u16 = 14;
 pub const HEADING_SIZE: u16 = 20;
 pub const TAB_HEIGHT: u16 = 32;
+pub const CONTENT_PADDING: u16 = 30;
+pub const BORDER_RADIUS: f32 = 8.0;
