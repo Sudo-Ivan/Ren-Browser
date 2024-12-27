@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "ren-browser"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Ivan"]
 readme = "README.md"
+packages = [{include = "ren_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
@@ -14,10 +15,12 @@ fastapi = {extras = ["standard"], version = "^0.115.6"}
 pydantic = "^2.10.4"
 msgpack = "^1.1.0"
 
-
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ren-api = "ren_api.main:main"

@@ -92,9 +92,9 @@ API_PID=""
 if [ $RUN_SERVER -eq 1 ]; then
     echo "Starting FastAPI server..."
     if [ -n "$DEBUG" ]; then
-        poetry run python ren-api.py --debug &
+        poetry run python -m ren_api.main --debug &
     else
-        poetry run uvicorn ren-api:app &
+        poetry run uvicorn ren_api.main:app &
     fi
     API_PID=$!
 
