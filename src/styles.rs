@@ -1,4 +1,4 @@
-use iced::widget::container;
+use iced::widget::{container, text_input};
 use iced::{widget::button, Color, Theme};
 
 pub struct Styles;
@@ -50,6 +50,10 @@ impl Styles {
 
     pub fn new_tab_button() -> iced::theme::Button {
         iced::theme::Button::Custom(Box::new(NewTabButtonStyle))
+    }
+
+    pub fn search_input() -> iced::theme::TextInput {
+        iced::theme::TextInput::Custom(Box::new(SearchInputStyle))
     }
 }
 
@@ -178,6 +182,55 @@ impl button::StyleSheet for NewTabButtonStyle {
         let active = self.active(style);
         button::Appearance {
             text_color: Color::WHITE,
+            ..active
+        }
+    }
+}
+
+struct SearchInputStyle;
+
+impl text_input::StyleSheet for SearchInputStyle {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
+            background: iced::Background::Color(Color::TRANSPARENT),
+            border_radius: 4.0.into(),
+            border_width: 1.0,
+            border_color: Color::from_rgb(0.3, 0.3, 0.3),
+            icon_color: Color::from_rgb(0.7, 0.7, 0.7),
+        }
+    }
+
+    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
+        let active = self.active(style);
+        text_input::Appearance {
+            border_color: Color::from_rgb(0.4, 0.4, 0.4),
+            ..active
+        }
+    }
+
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.5, 0.5, 0.5)
+    }
+
+    fn value_color(&self, _style: &Self::Style) -> Color {
+        Color::WHITE
+    }
+
+    fn selection_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.3, 0.4, 0.9)
+    }
+
+    fn disabled_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.3, 0.3, 0.3)
+    }
+
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        let active = self.active(style);
+        text_input::Appearance {
+            background: iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15)),
+            border_color: Color::from_rgb(0.2, 0.2, 0.2),
             ..active
         }
     }

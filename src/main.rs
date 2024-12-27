@@ -101,6 +101,7 @@ struct RenBrowser {
     api_status: ApiStatus,
     next_tab_id: usize,
     page_cache: PageCache,
+    node_search: String,
 }
 
 #[derive(Debug, Clone)]
@@ -120,6 +121,7 @@ enum Message {
     ReloadPage,
     FetchNodes,
     LinkClicked(String),
+    NodeSearchChanged(String),
 }
 
 impl Message {
@@ -154,6 +156,7 @@ impl Application for RenBrowser {
                 },
                 next_tab_id: 1,
                 page_cache: PageCache::new(300),
+                node_search: String::new(),
             },
             Command::batch(vec![
                 fetch_api_status().map(Message::from_lib),
@@ -350,6 +353,10 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
+            Message::NodeSearchChanged(search) => {
+                self.node_search = search;
+                Command::none()
+            }
         }
     }
 
@@ -362,11 +369,33 @@ impl Application for RenBrowser {
             // Top section with status and nodes
             column![
                 status_text,
-                text("Nodes").size(HEADING_SIZE),
+                container(
+                    text_input("Search nodes...", &self.node_search)
+                        .on_input(Message::NodeSearchChanged)
+                        .padding(8)
+                        .style(Styles::search_input())
+                        .width(Length::Fill)
+                )
+                .width(Length::Fill)
+                .padding([0, 0, 5, 0])
+                .style(theme::Container::Transparent),
                 scrollable(
                     column(
                         self.nodes
                             .iter()
+                            .filter(|node| {
+                                let search = self.node_search.to_lowercase();
+                                if search.is_empty() {
+                                    return true;
+                                }
+                                let name = node
+                                    .display_name
+                                    .as_deref()
+                                    .unwrap_or("Anonymous")
+                                    .to_lowercase();
+                                let hash = &node.destination_hash[0..8].to_lowercase();
+                                name.contains(&search) || hash.contains(&search)
+                            })
                             .map(|node| {
                                 let name = node.display_name.as_deref().unwrap_or("Anonymous");
                                 let hash = &node.destination_hash[0..8];
@@ -572,9 +601,27 @@ impl Application for RenBrowser {
                 .into()
         };
 
-        let main_content = column![tab_bar, address_bar, content]
+        let main_content = column![
+            tab_bar,
+            address_bar,
+            container(
+                text(match self.tabs.get(self.active_tab) {
+                    Some(tab) => match tab.renderer_type {
+                        RendererType::Micron => "Micron Renderer",
+                        RendererType::Plain => "Plain Text",
+                    },
+                    None => "",
+                })
+                .size(TEXT_SIZE - 2)
+                .style(theme::Text::Color(Styles::renderer_text()))
+            )
             .width(Length::Fill)
-            .height(Length::Fill);
+            .padding([2, PADDING])
+            .align_x(Horizontal::Right),
+            content,
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill);
 
         row![sidebar, main_content]
             .width(Length::Fill)
