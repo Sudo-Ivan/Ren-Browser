@@ -1,7 +1,9 @@
 use iced::{
     alignment::{Alignment, Horizontal},
-    event::{self, Event},
-    executor, keyboard, theme, time,
+    event::Event,
+    executor,
+    keyboard::{self, KeyCode},
+    theme, time,
     widget::{button, column, container, row, scrollable, text, text_input, Row},
     Application, Command, Element, Length, Settings, Subscription, Theme,
 };
@@ -14,7 +16,7 @@ use std::env;
 mod styles;
 use styles::{
     Styles, BORDER_RADIUS, CONTENT_PADDING, HEADING_SIZE, PADDING, SIDEBAR_WIDTH, SPACING,
-    TAB_HEIGHT, TEXT_SIZE,
+    SPINNER_BORDER, SPINNER_SIZE, TAB_HEIGHT, TEXT_SIZE,
 };
 
 mod api;
@@ -151,7 +153,10 @@ impl Application for RenBrowser {
                 },
                 next_tab_id: 1,
             },
-            Command::batch(vec![fetch_api_status().map(Message::from_lib), fetch_nodes().map(Message::from_lib)]),
+            Command::batch(vec![
+                fetch_api_status().map(Message::from_lib),
+                fetch_nodes().map(Message::from_lib),
+            ]),
         )
     }
 
@@ -177,10 +182,22 @@ impl Application for RenBrowser {
                 Command::none()
             }
             Message::CloseTab(id) => {
-                if let Some(index) = self.tabs.iter().position(|tab| tab.id == id) {
-                    self.tabs.remove(index);
-                    if self.active_tab >= self.tabs.len() {
-                        self.active_tab = self.tabs.len().saturating_sub(1);
+                if id == 0 {
+                    if let Some(tab) = self.tabs.get(self.active_tab) {
+                        let real_id = tab.id;
+                        if let Some(index) = self.tabs.iter().position(|t| t.id == real_id) {
+                            self.tabs.remove(index);
+                            if self.active_tab >= self.tabs.len() {
+                                self.active_tab = self.tabs.len().saturating_sub(1);
+                            }
+                        }
+                    }
+                } else {
+                    if let Some(index) = self.tabs.iter().position(|t| t.id == id) {
+                        self.tabs.remove(index);
+                        if self.active_tab >= self.tabs.len() {
+                            self.active_tab = self.tabs.len().saturating_sub(1);
+                        }
                     }
                 }
                 Command::none()
@@ -266,14 +283,9 @@ impl Application for RenBrowser {
                 }
                 Command::none()
             }
-            Message::Shortcut(Shortcut::Reload) => {
-                if let Some(tab) = self.tabs.get(self.active_tab) {
-                    return fetch_page(tab.address.clone());
-                }
-                Command::none()
-            }
-            Message::ReloadPage => {
-                if let Some(tab) = self.tabs.get(self.active_tab) {
+            Message::Shortcut(Shortcut::Reload) | Message::ReloadPage => {
+                if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                    tab.loading = true;
                     return fetch_page(tab.address.clone());
                 }
                 Command::none()
@@ -417,61 +429,79 @@ impl Application for RenBrowser {
         };
 
         let content = if let Some(tab) = self.tabs.get(self.active_tab) {
-            container(column![
-                scrollable(
-                    column(
-                        tab.rendered_content
-                            .iter()
-                            .map(|(content, style)| {
-                                let mut text_el = text(content);
-                                text_el = text_el.size(TEXT_SIZE);
-
-                                if let Some(color) = style.foreground {
-                                    text_el = text_el.style(color);
-                                } else {
-                                    text_el = text_el.style(Styles::text_color());
-                                }
-
-                                let container = container(text_el);
-
-                                match style.alignment {
-                                    TextAlignment::Center => container.align_x(Horizontal::Center),
-                                    TextAlignment::Right => container.align_x(Horizontal::Right),
-                                    TextAlignment::Left => container.align_x(Horizontal::Left),
-                                    TextAlignment::Default => container,
-                                }
-                                .width(Length::Fill)
-                                .into()
-                            })
-                            .collect(),
-                    )
-                    .spacing(SPACING)
-                    .padding(CONTENT_PADDING)
-                    .width(Length::Fill),
-                )
-                .height(Length::Fill),
+            if tab.loading {
+                // Show loading spinner
                 container(
-                    text(if let Some(tab) = self.tabs.get(self.active_tab) {
-                        match tab.renderer_type {
-                            RendererType::Micron => "Micron Renderer",
-                            RendererType::Plain => "Plain Text Renderer",
-                        }
-                    } else {
-                        "No Renderer"
-                    })
-                    .size(TEXT_SIZE - 2)
-                    .style(Styles::renderer_text())
+                    container(text(""))
+                        .width(Length::Fixed(SPINNER_SIZE))
+                        .height(Length::Fixed(SPINNER_SIZE))
+                        .style(Styles::spinner()),
                 )
                 .width(Length::Fill)
-                .align_x(Horizontal::Right)
-                .padding([0, CONTENT_PADDING])
-            ])
-            .style(|_theme: &Theme| container::Appearance {
-                background: Some(Styles::content_container()),
-                border_radius: BORDER_RADIUS.into(),
-                ..Default::default()
-            })
-            .padding(PADDING)
+                .height(Length::Fill)
+                .center_x()
+                .center_y()
+            } else {
+                container(column![
+                    scrollable(
+                        column(
+                            tab.rendered_content
+                                .iter()
+                                .map(|(content, style)| {
+                                    let mut text_el = text(content);
+                                    text_el = text_el.size(TEXT_SIZE);
+
+                                    if let Some(color) = style.foreground {
+                                        text_el = text_el.style(color);
+                                    } else {
+                                        text_el = text_el.style(Styles::text_color());
+                                    }
+
+                                    let container = container(text_el);
+
+                                    match style.alignment {
+                                        TextAlignment::Center => {
+                                            container.align_x(Horizontal::Center)
+                                        }
+                                        TextAlignment::Right => {
+                                            container.align_x(Horizontal::Right)
+                                        }
+                                        TextAlignment::Left => container.align_x(Horizontal::Left),
+                                        TextAlignment::Default => container,
+                                    }
+                                    .width(Length::Fill)
+                                    .into()
+                                })
+                                .collect(),
+                        )
+                        .spacing(SPACING)
+                        .padding(CONTENT_PADDING)
+                        .width(Length::Fill),
+                    )
+                    .height(Length::Fill),
+                    container(
+                        text(if let Some(tab) = self.tabs.get(self.active_tab) {
+                            match tab.renderer_type {
+                                RendererType::Micron => "Micron Renderer",
+                                RendererType::Plain => "Plain Text Renderer",
+                            }
+                        } else {
+                            "No Renderer"
+                        })
+                        .size(TEXT_SIZE - 2)
+                        .style(Styles::renderer_text())
+                    )
+                    .width(Length::Fill)
+                    .align_x(Horizontal::Right)
+                    .padding([0, CONTENT_PADDING])
+                ])
+                .style(|_theme: &Theme| container::Appearance {
+                    background: Some(Styles::content_container()),
+                    border_radius: BORDER_RADIUS.into(),
+                    ..Default::default()
+                })
+                .padding(PADDING)
+            }
         } else {
             container(
                 scrollable(column![text("No tab selected")].padding(CONTENT_PADDING))
@@ -500,17 +530,23 @@ impl Application for RenBrowser {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::batch(vec![
+        Subscription::batch([
             iced::subscription::events_with(|event, status| {
-                if let event::Status::Captured = status {
+                if let iced::event::Status::Captured = status {
                     return None;
                 }
 
-                if let Event::Keyboard(keyboard::Event::KeyPressed { .. }) = event {
-                    if let Some(shortcut) = handle_shortcut(event, keyboard::Modifiers::empty()) {
-                        Some(Message::Shortcut(shortcut))
-                    } else {
-                        None
+                if let iced::Event::Keyboard(keyboard::Event::KeyPressed {
+                    key_code,
+                    modifiers,
+                    ..
+                }) = event
+                {
+                    match (key_code, modifiers.command()) {
+                        (KeyCode::R, true) => Some(Message::ReloadPage),
+                        (KeyCode::T, true) => Some(Message::AddTab),
+                        (KeyCode::W, true) => Some(Message::CloseTab(0)),
+                        _ => None,
                     }
                 } else {
                     None

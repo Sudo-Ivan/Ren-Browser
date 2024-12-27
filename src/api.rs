@@ -1,8 +1,8 @@
+use crate::Message;
 use log::debug;
 use reqwest;
 use serde::Deserialize;
 use serde_json;
-use crate::Message;
 
 // API constants
 pub const API_HOST: &str = "http://localhost:8000";

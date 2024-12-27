@@ -1,3 +1,4 @@
+use iced::widget::container;
 use iced::{widget::button, Color, Theme};
 
 pub struct Styles;
@@ -37,6 +38,10 @@ impl Styles {
 
     pub fn renderer_text() -> Color {
         Color::from_rgb(0.4, 0.4, 0.4)
+    }
+
+    pub fn spinner() -> iced::theme::Container {
+        iced::theme::Container::Custom(Box::new(SpinnerStyle))
     }
 }
 
@@ -90,3 +95,23 @@ pub const HEADING_SIZE: u16 = 20;
 pub const TAB_HEIGHT: u16 = 32;
 pub const CONTENT_PADDING: u16 = 30;
 pub const BORDER_RADIUS: f32 = 8.0;
+pub const SPINNER_SIZE: f32 = 24.0;
+pub const SPINNER_BORDER: f32 = 2.5;
+
+pub struct SpinnerStyle;
+
+impl container::StyleSheet for SpinnerStyle {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            border_width: SPINNER_BORDER,
+            border_color: Color::from_rgb(0.7, 0.7, 0.7),
+            border_radius: (SPINNER_SIZE / 2.0).into(),
+            background: Some(iced::Background::Color(Color::from_rgba(
+                0.0, 0.0, 0.0, 0.2,
+            ))),
+            ..Default::default()
+        }
+    }
+}
