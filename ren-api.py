@@ -111,14 +111,16 @@ class AnnounceHandler:
         self.aspect_filter = aspect_filter
         self.received_announce_callback = received_announce_callback
 
-    def received_announce(self, destination_hash, announced_identity, app_data, announce_packet_hash):
+    def received_announce(
+        self, destination_hash, announced_identity, app_data, announce_packet_hash
+    ):
         try:
             self.received_announce_callback(
                 self.aspect_filter,
-                destination_hash, 
+                destination_hash,
                 announced_identity,
                 app_data,
-                announce_packet_hash
+                announce_packet_hash,
             )
         except Exception as e:
             logging.error(f"Error handling announce: {str(e)}")
@@ -187,10 +189,19 @@ class LXMFHandler:
         # Load saved nodes on startup
         self.load_nodes()
 
-    def _handle_announce(self, aspect, destination_hash, announced_identity, app_data, announce_packet_hash):
+    def _handle_announce(
+        self,
+        aspect,
+        destination_hash,
+        announced_identity,
+        app_data,
+        announce_packet_hash,
+    ):
         """Central announce handler for all aspects"""
-        self.logger.info(f"Received {aspect} announce from {RNS.prettyhexrep(destination_hash)}")
-        
+        self.logger.info(
+            f"Received {aspect} announce from {RNS.prettyhexrep(destination_hash)}"
+        )
+
         # Parse display name from app_data
         display_name = None
         if app_data:
@@ -229,7 +240,7 @@ class LXMFHandler:
                 "display_name": display_name,
                 "aspect": aspect,
                 "created_at": int(time.time()),
-                "updated_at": int(time.time())
+                "updated_at": int(time.time()),
             }
             self.logger.debug(f"Stored {aspect} announce from {destination_hash.hex()}")
         except Exception as e:
@@ -531,7 +542,7 @@ class LXMFHandler:
                         display_name=announce["display_name"],
                         aspect=announce["aspect"],
                         created_at=announce["created_at"],
-                        updated_at=announce["updated_at"]
+                        updated_at=announce["updated_at"],
                     )
                 )
         except Exception as e:
