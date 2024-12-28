@@ -13,7 +13,7 @@ See [TODO.md](TODO.md).
 
 ## Features
 
-- Micron Renderer
+- Micron Renderer (very bare implementation right now)
 - Plain Text Renderer (fallback)
 - Page Caching
 - Configurable via settings (type settings in the URL bar) or .toml files (.config/ren-browser/ren-browser.toml)
@@ -21,7 +21,7 @@ See [TODO.md](TODO.md).
 ## Ren API
 
 - Multiple Clients
-- Saving nodes and paths to JSON (moving to SQLite in the future)
+- Saving nomadnet nodes and paths to JSON (moving to SQLite in the future)
 - Detailed Logging
 
 
