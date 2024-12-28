@@ -20,16 +20,19 @@ See [TODO.md](TODO.md).
 
 ## Ren API
 
+Ren API can be used independently of the browser, add it has a backend to your project.
+
 - Multiple Clients
 - Saving nomadnet nodes and paths to JSON (moving to SQLite in the future)
 - Detailed Logging
 
-
-## Keybindings
+## Browser Keybindings
 
 - `Ctrl+R` to reload a page
 - `Ctrl+T` to open a new tab
 - `Ctrl+W` to close a tab
+
+more coming soon and modifiable in the future.
 
 ## Requirements
 ```
@@ -60,14 +63,6 @@ cargo run -- --debug
 
 ```bash
 python ren_api/main.py --debug # or poetry run python ren_api/main.py --debug
-```
-
-## Ren API Routes
-
-```bash
-/api/v1/status - Get API status
-/api/v1/nodes - Get all nodes
-/api/v1/page - Get page content for <address>:/pages/<page_name>
 ```
 
 ### Libraries Used
