@@ -30,12 +30,12 @@ The API connects to the Reticulum Network Stack and provides:
 """
 
 app = FastAPI(
-    title="Ren Browser API",
+    title="Ren API",
     description=description,
     version="0.1.0",
     contact={
-        "name": "Ren Browser",
-        "url": "https://github.com/Sudo-Ivan/Ren-Browser",
+        "name": "Sudo-Ivan",
+        "url": "https://github.com/Sudo-Ivan",
     },
     license_info={
         "name": "MIT",
