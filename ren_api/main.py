@@ -32,7 +32,7 @@ The API connects to the Reticulum Network Stack and provides:
 app = FastAPI(
     title="Ren API",
     description=description,
-    version="0.4.0",
+    version="0.5.0",
     contact={
         "name": "Sudo-Ivan",
         "url": "https://github.com/Sudo-Ivan",

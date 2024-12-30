@@ -527,7 +527,7 @@ impl Application for RenBrowser {
             ],
             // Bottom section with version and address
             column![
-                text("Ren Browser - v0.4.0")
+                text("Ren Browser - v0.5.0")
                     .size(TEXT_SIZE - 2)
                     .style(theme::Text::Color(Styles::muted_text())),
                 text(if !self.api_status.address.is_empty() {
