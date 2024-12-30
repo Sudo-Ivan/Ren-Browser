@@ -611,12 +611,11 @@ impl Application for RenBrowser {
 
         let content = if let Some(tab) = self.tabs.get(self.active_tab) {
             if tab.loading {
-                // Show loading spinner
+                // Replace spinner with Loading... text for now
                 container(
-                    container(text(""))
-                        .width(Length::Fixed(SPINNER_SIZE))
-                        .height(Length::Fixed(SPINNER_SIZE))
-                        .style(Styles::spinner()),
+                    text("Loading...")
+                        .size(TEXT_SIZE)
+                        .style(theme::Text::Color(Color::from_rgb(0.7, 0.7, 0.7)))
                 )
                 .width(Length::Fill)
                 .height(Length::Fill)
