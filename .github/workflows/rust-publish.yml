@@ -11,7 +11,7 @@ jobs:
 
     permissions:
       contents: write
-      id-token: write  # needed for sigstore signing
+      id-token: write
 
     steps:
     - uses: actions/checkout@v4
@@ -36,7 +36,6 @@ jobs:
       uses: sigstore/gh-action-sigstore-python@v3.0.0
       with:
         inputs: >-
-          target/release/ren-browser
           target/release/ren-browser-linux-x86_64.tar.gz
         
     - name: Upload binary to release
@@ -44,10 +43,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         gh release upload "${{ github.event.release.tag_name }}" \
-          target/release/ren-browser \
           target/release/ren-browser-linux-x86_64.tar.gz \
-          target/release/ren-browser.sig \
-          target/release/ren-browser.crt \
           target/release/ren-browser-linux-x86_64.tar.gz.sig \
           target/release/ren-browser-linux-x86_64.tar.gz.crt \
           --clobber 
