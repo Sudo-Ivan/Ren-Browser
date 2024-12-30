@@ -4,13 +4,12 @@
 - [x] Basic browsing functionality
 - [x] Node discovery and listing
 - [x] Page loading
-- [x] Micron (.mu) renderer (basic)
-  - [ ] Advanced formatting
-  - [ ] Tables support
-  - [ ] Lists support
-  - [ ] Links support
-- [ ] HTML + CSS renderer (search for at address:/page/index.html)
-- [ ] File downloading from nodes (:/files/)
+- [x] Page Caching
+- [x] Micron (.mu) renderer (very barebones)
+  - [ ] Full 1:1 with Micron Parser JS
+  - [ ] Render background window black
+- [ ] HTML + CSS renderer (search for at address:/pages/index.html)
+- [ ] File downloading from nodes (:/files/) (Ren-API)
 
 ## UI/UX Improvements
 - [ ] Bookmarks system
@@ -48,13 +47,10 @@
   - [ ] Identity backup/restore
 - [x] Keyboard shortcuts
   - [x] Reload page (Ctrl+R)
-  - [ ] Custom keybinding support
-  - [ ] Common browser shortcuts
-    - [ ] New tab (Ctrl+T)
-    - [ ] Close tab (Ctrl+W)
-    - [ ] Next tab (Ctrl+Tab)
-    - [ ] Previous tab (Ctrl+Shift+Tab)
-  - [ ] Shortcut cheatsheet
+  - [x] New tab (Ctrl+T)
+  - [x] Close tab (Ctrl+W)
+  - [ ] Next tab (Ctrl+Tab)
+  - [ ] Previous tab (Ctrl+Shift+Tab)
 
 ## Network Features
 - [x] Connection status indicators
@@ -64,10 +60,7 @@
 - [ ] Connection retry/fallback
 
 ## Security & Privacy 
-- [ ] Private browsing mode
-- [ ] Content security policies
-- [ ] Certificate validation
-- [ ] Local data encryption
+- [ ] Private browsing mode (Ren-API)
 
 ## Developer Tools
 - [ ] Page source viewer
@@ -81,7 +74,6 @@
 - [ ] Network inspector
 
 ## Documentation
-- [x] Design document
 - [ ] User manual
 - [ ] Developer documentation
 - [ ] API documentation
@@ -113,6 +105,3 @@
   - [ ] Linux
   - [ ] macOS
   - [ ] Windows
-- [ ] Auto-update system
-- [ ] Installation scripts
-- [ ] Dependency management 
