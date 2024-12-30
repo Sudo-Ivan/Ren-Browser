@@ -26,6 +26,8 @@ use renderers::mu_renderer::{MicronRenderer, MicronStyle, RendererType, TextAlig
 mod ren_settings;
 use ren_settings::{RenSettings, SettingUpdate};
 
+use itertools::Itertools;
+
 use crate::Message as LibMessage;
 
 mod caching;
@@ -35,8 +37,6 @@ mod monitoring;
 
 use monitoring::AppMonitor;
 use std::time::Duration;
-
-const VERSION: &str = "0.3.0";
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
@@ -476,6 +476,7 @@ impl Application for RenBrowser {
                     column(
                         self.nodes
                             .iter()
+                            .sorted_by(|a, b| b.updated_at.cmp(&a.updated_at))
                             .filter(|node| {
                                 let search = self.node_search.to_lowercase();
                                 if search.is_empty() {
@@ -492,16 +493,15 @@ impl Application for RenBrowser {
                             .map(|node| {
                                 let name = node.display_name.as_deref().unwrap_or("Anonymous");
                                 let hash = &node.destination_hash[0..8];
-                                let last_seen =
-                                    chrono::DateTime::from_timestamp(node.updated_at, 0)
-                                        .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
-                                        .unwrap_or_else(|| "Anonymous".to_string());
+                                let last_seen = format_relative_time(node.updated_at);
 
                                 button(
                                     column![
                                         text(name).size(TEXT_SIZE),
                                         text(hash).size(TEXT_SIZE - 2),
-                                        text(last_seen).size(TEXT_SIZE - 4)
+                                        text(last_seen)
+                                            .size(TEXT_SIZE - 4)
+                                            .style(theme::Text::Color(Styles::text_color_muted()))
                                     ]
                                     .spacing(SPACING / 2),
                                 )
@@ -521,7 +521,7 @@ impl Application for RenBrowser {
             ],
             // Bottom section with version and address
             column![
-                text("Ren Browser - v0.3.0")
+                text("Ren Browser - v0.4.0")
                     .size(TEXT_SIZE - 2)
                     .style(theme::Text::Color(Styles::muted_text())),
                 text(if !self.api_status.address.is_empty() {
@@ -778,4 +778,31 @@ impl Application for RenBrowser {
             time::every(std::time::Duration::from_secs(5)).map(|_| Message::FetchNodes),
         ])
     }
+}
+
+fn format_relative_time(timestamp: i64) -> String {
+    let now = chrono::Utc::now().timestamp();
+    let diff = now - timestamp;
+
+    if diff < 60 {
+        return "just now".to_string();
+    }
+    if diff < 3600 {
+        let mins = diff / 60;
+        return format!("{} min{} ago", mins, if mins == 1 { "" } else { "s" });
+    }
+    if diff < 86400 {
+        let hours = diff / 3600;
+        return format!("{} hour{} ago", hours, if hours == 1 { "" } else { "s" });
+    }
+    if diff < 2592000 {
+        let days = diff / 86400;
+        return format!("{} day{} ago", days, if days == 1 { "" } else { "s" });
+    }
+    if diff < 31536000 {
+        let months = diff / 2592000;
+        return format!("{} month{} ago", months, if months == 1 { "" } else { "s" });
+    }
+    let years = diff / 31536000;
+    format!("{} year{} ago", years, if years == 1 { "" } else { "s" })
 }

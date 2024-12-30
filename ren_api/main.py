@@ -32,7 +32,7 @@ The API connects to the Reticulum Network Stack and provides:
 app = FastAPI(
     title="Ren API",
     description=description,
-    version="0.1.0",
+    version="0.4.0",
     contact={
         "name": "Sudo-Ivan",
         "url": "https://github.com/Sudo-Ivan",
@@ -161,6 +161,8 @@ class LXMFHandler:
     cached_links = {}
     paths_file = "paths.json"
     paths = {}
+    identities = {}
+    identities_file = "identities.json"
 
     def __init__(self, name="RenBrowser"):
         self.logger = logging.getLogger(__name__)
@@ -219,6 +221,11 @@ class LXMFHandler:
         RNS.Transport.register_announce_handler(self.path_handler)
         self.logger.debug("Path response handler registered")
 
+        # Add identity storage
+        self.identities = {}
+        self.identities_file = os.path.join(self.config_path, "identities.json")
+        self.load_identities()
+
     def _handle_announce(
         self,
         aspect,
@@ -244,8 +251,27 @@ class LXMFHandler:
         self._store_announce(aspect, destination_hash, announced_identity, app_data)
 
     def _store_announce(self, aspect, destination_hash, announced_identity, app_data):
-        """Store announce data"""
+        """Store announce data and identity"""
         try:
+            # Store the identity first
+            identity_hex = announced_identity.hash.hex()
+            if identity_hex not in self.identities:
+                # Store the full identity data
+                self.identities[identity_hex] = {
+                    "public_key": base64.b64encode(
+                        announced_identity.get_public_key()
+                    ).decode("utf-8"),
+                    "created_at": int(time.time()),
+                    "updated_at": int(time.time()),
+                }
+                self.save_identities()
+                self.logger.debug(f"Stored new identity: {identity_hex}")
+            else:
+                # Update last seen time
+                self.identities[identity_hex]["updated_at"] = int(time.time())
+                self.save_identities()
+
+            # Existing announce storage code
             display_name = None
             if app_data:
                 try:
@@ -262,13 +288,14 @@ class LXMFHandler:
 
             self.announces[destination_hash.hex()] = {
                 "destination_hash": destination_hash.hex(),
-                "identity_hash": announced_identity.hash.hex(),
+                "identity_hash": identity_hex,
                 "display_name": display_name,
                 "aspect": aspect,
                 "created_at": int(time.time()),
                 "updated_at": int(time.time()),
             }
             self.logger.debug(f"Stored {aspect} announce from {destination_hash.hex()}")
+
         except Exception as e:
             self.logger.error(f"Error storing announce: {str(e)}")
 
@@ -415,7 +442,19 @@ class LXMFHandler:
             )
             dest_hash_bytes = bytes.fromhex(destination_hash)
 
-            identity = RNS.Identity.recall(dest_hash_bytes)
+            identity = None
+            identity_hex = None
+            for id_hash, id_data in self.identities.items():
+                if id_hash.startswith(destination_hash):
+                    identity = RNS.Identity.from_bytes(
+                        base64.b64decode(id_data["public_key"])
+                    )
+                    identity_hex = id_hash
+                    break
+
+            if not identity:
+                identity = RNS.Identity.recall(dest_hash_bytes)
+
             if not identity:
                 self.logger.debug(
                     f"No identity found for {destination_hash}, requesting path"
@@ -432,7 +471,6 @@ class LXMFHandler:
                 "node",
             )
 
-            # Use our path-aware establish_link method
             self.logger.debug(f"Establishing link to {destination_hash}")
             link = await self.establish_link(dest_hash_bytes)
 
@@ -507,10 +545,8 @@ class LXMFHandler:
 
     async def shutdown(self):
         """Clean shutdown of Reticulum"""
-        # Deregister path handler
         RNS.Transport.deregister_announce_handler(self.path_handler)
 
-        # Close all cached links
         for link in self.cached_links.values():
             link.teardown()
         self.cached_links.clear()
@@ -524,99 +560,85 @@ class LXMFHandler:
     async def establish_link(
         self, destination_hash: bytes, timeout: int = 15
     ) -> RNS.Link:
-        """Establish a link with path discovery"""
+        """Establish a link with improved path and identity handling"""
         try:
             self.logger.debug(
                 f"Attempting to establish link to {destination_hash.hex()}"
             )
 
-            # Check if we already have a path
-            if RNS.Transport.has_path(destination_hash):
-                self.logger.debug(f"Using existing path for {destination_hash.hex()}")
-                hops = RNS.Transport.hops_to(destination_hash)
-                next_hop = RNS.Transport.next_hop(destination_hash)
-                self.logger.debug(
-                    f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}"
-                )
-                return await self._create_link(destination_hash, timeout)
-
-            # Request path and wait for response
-            self.logger.debug(f"Requesting new path to {destination_hash.hex()}")
-            RNS.Transport.request_path(destination_hash)
-
-            path_timeout = time.time() + timeout
-            while time.time() < path_timeout:
-                if RNS.Transport.has_path(destination_hash):
-                    hops = RNS.Transport.hops_to(destination_hash)
-                    next_hop = RNS.Transport.next_hop(destination_hash)
-                    self.logger.debug(f"Path found for {destination_hash.hex()}")
+            if destination_hash in self.cached_links:
+                link = self.cached_links[destination_hash]
+                if link.status == RNS.Link.ACTIVE:
                     self.logger.debug(
-                        f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}"
+                        f"Using cached active link for {destination_hash.hex()}"
                     )
-                    return await self._create_link(destination_hash, timeout)
-                await asyncio.sleep(0.1)
+                    return link
+                else:
+                    self.logger.debug(
+                        f"Removing stale cached link for {destination_hash.hex()}"
+                    )
+                    del self.cached_links[destination_hash]
 
-            self.logger.warning(f"Path lookup timed out for {destination_hash.hex()}")
-            raise HTTPException(status_code=504, detail="Path lookup timed out")
+            identity = None
 
-        except Exception as e:
-            self.logger.error(f"Error establishing link: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
+            for id_hash, id_data in self.identities.items():
+                if destination_hash.hex().startswith(
+                    id_hash[: len(destination_hash.hex())]
+                ):
+                    identity = id_data
+                    break
 
-    async def _create_link(self, destination_hash: bytes, timeout: int) -> RNS.Link:
-        """Helper method to create and establish a link"""
-        try:
-            self.logger.debug(f"Creating link for {destination_hash.hex()}")
-
-            # Log transport state
-            self.logger.debug(f"Transport state for {destination_hash.hex()}:")
-            self.logger.debug(f"  Has path: {RNS.Transport.has_path(destination_hash)}")
-            self.logger.debug(f"  Hops: {RNS.Transport.hops_to(destination_hash)}")
-            next_hop = RNS.Transport.next_hop(destination_hash)
-            self.logger.debug(f"  Next hop: {next_hop.hex() if next_hop else None}")
-
-            identity = RNS.Identity.recall(destination_hash)
             if not identity:
-                self.logger.error(f"No identity found for {destination_hash.hex()}")
+                identity = RNS.Identity.recall(destination_hash)
+
+            if not identity:
+                RNS.Transport.request_path(destination_hash)
+                start_time = time.time()
+                while time.time() - start_time < timeout:
+                    identity = RNS.Identity.recall(destination_hash)
+                    if identity:
+                        break
+                    await asyncio.sleep(0.1)
+
+            if not identity:
                 raise HTTPException(status_code=404, detail="Identity not found")
 
             destination = RNS.Destination(
                 identity,
                 RNS.Destination.OUT,
                 RNS.Destination.SINGLE,
-                "nomadnetwork",  # Make sure we're using the right aspect
+                "nomadnetwork",
                 "node",
             )
 
-            self.logger.debug(f"Creating link with destination: {destination}")
             link = RNS.Link(destination)
 
             # Monitor link establishment
             start_time = time.time()
-            last_status = None
             while time.time() - start_time < timeout:
-                current_status = link.status
-                if current_status != last_status:
-                    self.logger.debug(f"Link status changed to: {current_status}")
-                    last_status = current_status
-
-                if current_status == RNS.Link.ACTIVE:
+                if link.status == RNS.Link.ACTIVE:
                     self.logger.debug(
                         f"Successfully established link to {destination_hash.hex()}"
                     )
                     self.cached_links[destination_hash] = link
                     return link
-
+                elif link.status == RNS.Link.CLOSED:
+                    self.logger.warning(
+                        f"Link closed during establishment for {destination_hash.hex()}"
+                    )
+                    raise HTTPException(
+                        status_code=504, detail="Link closed during establishment"
+                    )
                 await asyncio.sleep(0.1)
 
             self.logger.warning(
-                f"Link establishment timed out for {destination_hash.hex()} after {timeout}s. "
-                f"Final status: {link.status}"
+                f"Link establishment timed out for {destination_hash.hex()}"
             )
-            raise HTTPException(status_code=504, detail="Could not establish link")
+            link.teardown()
+            raise HTTPException(status_code=504, detail="Link establishment timed out")
 
         except Exception as e:
-            self.logger.error(f"Error during link creation: {str(e)}")
+            self.logger.error(f"Error establishing link: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def get_announces(self, aspect: Optional[str] = None) -> List[Announce]:
@@ -706,6 +728,26 @@ class LXMFHandler:
         except Exception as e:
             self.logger.error(f"Error handling path response: {str(e)}")
 
+    def load_identities(self):
+        """Load stored identities from JSON file"""
+        try:
+            if os.path.exists(self.identities_file):
+                with open(self.identities_file, "r") as f:
+                    self.identities = json.load(f)
+                self.logger.debug(f"Loaded {len(self.identities)} stored identities")
+        except Exception as e:
+            self.logger.error(f"Error loading identities: {str(e)}")
+            self.identities = {}
+
+    def save_identities(self):
+        """Save identities to JSON file"""
+        try:
+            with open(self.identities_file, "w") as f:
+                json.dump(self.identities, f)
+            self.logger.debug("Saved identities to file")
+        except Exception as e:
+            self.logger.error(f"Error saving identities: {str(e)}")
+
 
 lxmf_instance = None
 
@@ -776,11 +818,9 @@ async def get_page(page_request: PageRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Include router in app
 app.include_router(v1_router)
 
 
-# Update FastAPI app shutdown handler
 @app.on_event("shutdown")
 async def shutdown_event():
     await lxmf_instance.shutdown()

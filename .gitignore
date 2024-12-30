@@ -6,3 +6,4 @@ config/
 __pycache__
 dist
 .ruff_cache
+build

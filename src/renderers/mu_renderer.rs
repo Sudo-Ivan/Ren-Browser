@@ -1,5 +1,5 @@
 use iced::Color;
-use log::{debug, warn};
+use log::debug;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TextAlignment {

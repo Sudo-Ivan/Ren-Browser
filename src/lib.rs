@@ -12,4 +12,5 @@ pub enum Message {
     NodesUpdated(Box<Result<Vec<Node>, String>>),
     PageLoaded(Box<Result<String, String>>),
     OpenSettings,
+    LinkClicked(String),
 }

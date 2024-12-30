@@ -1,23 +1,25 @@
 [tool.poetry]
 name = "ren-api"
-version = "0.3.1"
+version = "0.4.0"
 description = ""
 authors = ["Ivan"]
 readme = "README.md"
 packages = [{include = "ren_api"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.14"
 rns = "^0.8.8"
 lxmf = "^0.5.8"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 pydantic = "^2.10.4"
 msgpack = "^1.1.0"
+pyinstaller = "^6.11.1"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.8.0"
 ruff = "^0.8.4"
+pyinstaller = "^6.11.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -28,6 +30,7 @@ ren-api = "ren_api.main:main"
 format = "scripts.format:format_files"
 scan = "scripts.scan:scan_files"
 lint = "scripts.lint:lint_files"
+builder = "scripts.builder:build_api"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".env", "scripts"]

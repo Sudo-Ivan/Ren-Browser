@@ -1,3 +1,4 @@
+use log;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
@@ -42,6 +43,7 @@ impl PageCache {
 
     pub fn clear(&mut self) {
         self.cache.clear();
+        log::debug!("Page cache cleared");
     }
 
     pub fn remove(&mut self, url: &str) {
