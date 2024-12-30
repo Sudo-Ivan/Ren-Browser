@@ -7,6 +7,7 @@ Python:
 Rust:
 - [cargo-audit](https://github.com/rustsec/cargo-audit)
 - [cargo fmt](https://github.com/rust-lang/rustfmt)
+- [cargo deny](https://github.com/EmbarkStudios/cargo-deny)
 
 
 ## Reporting a Vulnerability
