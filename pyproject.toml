@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ren-api"
-version = "0.3.0"
+version = "0.3.1"
 description = ""
 authors = ["Ivan"]
 readme = "README.md"
@@ -17,6 +17,8 @@ msgpack = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
+pylint = "^3.3.3"
+bandit = "^1.8.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -24,3 +26,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 ren-api = "ren_api.main:main"
+format = "scripts.format:format_files"
+scan = "scripts.scan:scan_files"
+lint = "scripts.lint:lint_files"
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".env"]
+skips = ["B311"]

@@ -44,9 +44,11 @@ Rust 1.83.0
 
 **API:**
 
+Install Poetry or you can use pip.
+
 ```bash
-pip install -r requirements.txt # or poetry install
-python ren_api/main.py # or poetry run python ren_api/main.py
+poetry install
+poetry run ren-api
 ```
 
 **Iced GUI:**
@@ -63,6 +65,14 @@ cargo run -- --debug
 
 ```bash
 python ren_api/main.py --debug # or poetry run python ren_api/main.py --debug
+```
+
+## Poetry Scripts
+
+```bash
+poetry run format # black
+poetry run scan # bandit
+poetry run lint # pylint
 ```
 
 ### Libraries Used
