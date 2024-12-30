@@ -1,3 +1,8 @@
+use super::micron_constants::{
+    ASCII_ART_MARKER, COMMENT_MARKER, DEFAULT_DIVIDER_CHAR, DEFAULT_DIVIDER_WIDTH,
+    DEFAULT_LINK_COLOR, DEFAULT_TEXT_COLOR, DIVIDER_MARKER, ESCAPE_CHAR, LINK_END, LINK_START,
+    LITERAL_TOGGLE, NAMED_COLORS, SECTION_COLORS, SECTION_MARKER, STYLE_MARKER,
+};
 use iced::Color;
 use log::debug;
 
@@ -128,7 +133,7 @@ impl MicronRenderer {
 
         for line in content.split('\n') {
             // Handle literal mode toggle
-            if line == "`=" {
+            if line == LITERAL_TOGGLE {
                 state.literal = !state.literal;
                 preserve_whitespace = state.literal; // Preserve whitespace in literal mode
                 continue;
@@ -147,7 +152,7 @@ impl MicronRenderer {
 
             if !state.literal {
                 // Handle comments
-                if line.starts_with('#') {
+                if line.starts_with(COMMENT_MARKER) {
                     continue;
                 }
 
@@ -164,18 +169,13 @@ impl MicronRenderer {
                 }
 
                 // Handle section headings
-                if line.starts_with('>') {
-                    let depth = line.chars().take_while(|&c| c == '>').count();
+                if line.starts_with(SECTION_MARKER) {
+                    let depth = line.chars().take_while(|&c| c == SECTION_MARKER).count();
                     state.style.section_depth = depth as u8;
 
                     // Apply heading style
                     let prev_style = state.style.clone();
-                    state.style.background = Some(match depth {
-                        1 => Color::from_rgb(0.73, 0.73, 0.73),
-                        2 => Color::from_rgb(0.60, 0.60, 0.60),
-                        3 => Color::from_rgb(0.47, 0.47, 0.47),
-                        _ => Color::from_rgb(0.33, 0.33, 0.33),
-                    });
+                    state.style.background = Some(SECTION_COLORS[depth.min(4) - 1]);
 
                     self.parse_line(
                         &line[depth..],
@@ -188,18 +188,18 @@ impl MicronRenderer {
                 }
 
                 // Handle horizontal dividers with custom characters
-                if line.starts_with('-') {
+                if line.starts_with(DIVIDER_MARKER) {
                     let divider = if line.len() > 1 {
-                        line.chars().nth(1).unwrap_or('─')
+                        line.chars().nth(1).unwrap_or(DEFAULT_DIVIDER_CHAR)
                     } else {
-                        '─'
+                        DEFAULT_DIVIDER_CHAR
                     };
 
                     // Support custom width dividers
                     let width = if line.len() > 2 {
-                        line[2..].parse::<usize>().unwrap_or(80)
+                        line[2..].parse::<usize>().unwrap_or(DEFAULT_DIVIDER_WIDTH)
                     } else {
-                        80
+                        DEFAULT_DIVIDER_WIDTH
                     };
 
                     let line = divider.to_string().repeat(width);
@@ -208,7 +208,7 @@ impl MicronRenderer {
                 }
 
                 // Handle ASCII art blocks
-                if line.starts_with('|') {
+                if line.starts_with(ASCII_ART_MARKER) {
                     preserve_whitespace = true;
                     let content = &line[1..];
                     styled_content.push((format!("{}\n", content), state.style.clone()));
@@ -252,13 +252,13 @@ impl MicronRenderer {
             }
 
             match c {
-                '\\' => {
+                ESCAPE_CHAR => {
                     if let Some(&next) = chars.peek() {
                         chars.next();
                         current_text.push(next);
                     }
                 }
-                '[' => {
+                LINK_START => {
                     // Handle link parsing
                     if !current_text.is_empty() {
                         styled_content.push((current_text.clone(), state.style.clone()));
@@ -271,11 +271,7 @@ impl MicronRenderer {
 
                     while let Some(lc) = chars.next() {
                         match lc {
-                            '`' => {
-                                in_url = true;
-                                continue;
-                            }
-                            ']' => {
+                            LINK_END => {
                                 break;
                             }
                             _ => {
@@ -290,7 +286,7 @@ impl MicronRenderer {
 
                     // Create link style
                     let mut link_style = state.style.clone();
-                    link_style.foreground = Some(Color::from_rgb(0.4, 0.6, 1.0));
+                    link_style.foreground = Some(DEFAULT_LINK_COLOR);
                     link_style.underline = true;
                     link_style.link = Some(Box::new(Link {
                         label: link_text.clone(),
@@ -310,7 +306,7 @@ impl MicronRenderer {
 
                     styled_content.push((link_text, link_style));
                 }
-                '`' => {
+                STYLE_MARKER => {
                     if !current_text.is_empty() {
                         styled_content.push((current_text.clone(), state.style.clone()));
                         current_text.clear();
@@ -337,7 +333,7 @@ impl MicronRenderer {
                             'l' => state.style.alignment = TextAlignment::Left,
                             'r' => state.style.alignment = TextAlignment::Right,
                             'a' => state.style.alignment = state.default_align,
-                            '`' => {
+                            STYLE_MARKER => {
                                 // Reset all formatting
                                 state.style = MicronStyle::default();
                                 state.style.section_depth = 0;
@@ -378,7 +374,16 @@ impl MicronRenderer {
 
 fn parse_color(hex: &str) -> Color {
     if hex == "default" {
-        return Color::from_rgb(0.87, 0.87, 0.87);
+        return DEFAULT_TEXT_COLOR;
+    }
+
+    // Handle named colors
+    if hex.starts_with('u') {
+        let color_name = &hex[1..];
+        if let Some((_, color)) = NAMED_COLORS.iter().find(|(name, _)| *name == color_name) {
+            return *color;
+        }
+        return DEFAULT_TEXT_COLOR;
     }
 
     if hex.len() == 3 {

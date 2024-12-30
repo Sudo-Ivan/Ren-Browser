@@ -43,36 +43,4 @@ impl AppMonitor {
             );
         }
     }
-
-    pub fn get_metrics(&mut self) -> serde_json::Value {
-        self.sys.refresh_all();
-
-        if let Some(process) = self.sys.process(self.pid) {
-            let mut metrics = serde_json::json!({
-                "cpu_usage": process.cpu_usage(),
-                "memory_kb": process.memory() / 1024,
-                "virtual_memory_kb": process.virtual_memory() / 1024,
-                "run_time": process.run_time(),
-            });
-
-            #[cfg(feature = "memory-profiling")]
-            if let Some(usage) = memory_stats() {
-                metrics.as_object_mut().unwrap().extend(
-                    serde_json::json!({
-                        "physical_mem_kb": usage.physical_mem / 1024,
-                        "virtual_mem_kb": usage.virtual_mem / 1024,
-                    })
-                    .as_object()
-                    .unwrap()
-                    .clone(),
-                );
-            }
-
-            metrics
-        } else {
-            serde_json::json!({
-                "error": "Process not found"
-            })
-        }
-    }
 }

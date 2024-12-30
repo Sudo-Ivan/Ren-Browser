@@ -13,8 +13,8 @@ use simple_logger::SimpleLogger;
 use std::env;
 
 use ren_browser::styles::{
-    Styles, CLOSE_BUTTON_SIZE, CONTENT_PADDING, PADDING, SIDEBAR_WIDTH, SPACING, SPINNER_SIZE,
-    TAB_HEIGHT, TEXT_SIZE,
+    Styles, CLOSE_BUTTON_SIZE, CONTENT_PADDING, PADDING, SIDEBAR_WIDTH, SPACING, TAB_HEIGHT,
+    TEXT_SIZE,
 };
 
 mod api;
@@ -305,7 +305,7 @@ impl Application for RenBrowser {
                         }
                         Command::none()
                     } else {
-                        fetch_page(tab.address.clone())
+                        fetch_page(tab.address.clone(), self.settings.features.html_renderer)
                     }
                 } else {
                     warn!("No active tab to load page");
@@ -406,7 +406,7 @@ impl Application for RenBrowser {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     tab.loading = true;
                     tab.address = url;
-                    return fetch_page(tab.address.clone());
+                    return fetch_page(tab.address.clone(), self.settings.features.html_renderer);
                 }
                 Command::none()
             }
@@ -431,6 +431,9 @@ impl Application for RenBrowser {
                     SettingUpdate::WindowHeight(h) => self.settings.window.height = h,
                     SettingUpdate::TextSize(s) => self.settings.appearance.text_size = s,
                     SettingUpdate::SidebarWidth(w) => self.settings.appearance.sidebar_width = w,
+                    SettingUpdate::HtmlRenderer(enabled) => {
+                        self.settings.features.html_renderer = enabled
+                    }
                 }
                 self.settings.save();
                 self.show_save_notification = true;
@@ -445,7 +448,7 @@ impl Application for RenBrowser {
                 if let Some(tab) = self.tabs.get_mut(self.active_tab) {
                     self.page_cache.remove(&tab.address);
                     tab.loading = true;
-                    return fetch_page(tab.address.clone());
+                    return fetch_page(tab.address.clone(), self.settings.features.html_renderer);
                 }
                 Command::none()
             }
@@ -463,11 +466,14 @@ impl Application for RenBrowser {
             column![
                 status_text,
                 container(
-                    text_input("Search nodes...", &self.node_search)
-                        .on_input(Message::NodeSearchChanged)
-                        .padding(8)
-                        .style(Styles::search_input())
-                        .width(Length::Fill)
+                    text_input(
+                        &format!("Search {} nodes...", self.nodes.len()),
+                        &self.node_search
+                    )
+                    .on_input(Message::NodeSearchChanged)
+                    .padding(8)
+                    .style(Styles::search_input())
+                    .width(Length::Fill)
                 )
                 .width(Length::Fill)
                 .padding([0, 0, 5, 0])

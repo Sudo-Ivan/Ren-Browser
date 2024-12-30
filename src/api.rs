@@ -11,10 +11,7 @@ pub const API_VERSION: &str = "v1";
 #[derive(Debug, Clone, Deserialize)]
 pub struct Node {
     pub destination_hash: String,
-    pub identity_hash: String,
     pub display_name: Option<String>,
-    pub aspect: String,
-    pub created_at: i64,
     pub updated_at: i64,
 }
 
@@ -54,21 +51,45 @@ pub fn fetch_nodes() -> iced::Command<Message> {
     )
 }
 
-pub fn fetch_page(address: String) -> iced::Command<Message> {
+pub fn fetch_page(address: String, html_enabled: bool) -> iced::Command<Message> {
     debug!("Fetching page: {}", address);
     iced::Command::perform(
         async move {
             let client = reqwest::Client::new();
-
-            // Extract page path from address (format: hash:/page/path)
             let parts: Vec<&str> = address.split(':').collect();
             if parts.len() != 2 {
                 return Err("Invalid address format. Use: hash:/page/path".to_string());
             }
 
             let hash = parts[0];
-            let path = parts[1];
+            if html_enabled {
+                let html_path = "/pages/index.html";
+                let html_result = client
+                    .post(&format!("{}/api/{}/page", API_HOST, API_VERSION))
+                    .json(&serde_json::json!({
+                        "destination_hash": hash,
+                        "page_path": html_path,
+                    }))
+                    .send()
+                    .await;
 
+                if let Ok(response) = html_result {
+                    if response.status().is_success() {
+                        return response
+                            .json::<serde_json::Value>()
+                            .await
+                            .map(|json| {
+                                json.get("content")
+                                    .and_then(|c| c.as_str())
+                                    .unwrap_or("Invalid response format")
+                                    .to_string()
+                            })
+                            .map_err(|e| e.to_string());
+                    }
+                }
+            }
+
+            let path = parts[1];
             match client
                 .post(&format!("{}/api/{}/page", API_HOST, API_VERSION))
                 .json(&serde_json::json!({

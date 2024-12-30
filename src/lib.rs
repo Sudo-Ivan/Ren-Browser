@@ -1,5 +1,8 @@
 pub mod api;
-pub mod renderers;
+pub mod renderers {
+    pub mod micron_constants;
+    pub mod mu_renderer;
+}
 pub mod shortcuts;
 pub mod styles;
 
@@ -13,4 +16,5 @@ pub enum Message {
     PageLoaded(Box<Result<String, String>>),
     OpenSettings,
     LinkClicked(String),
+    ToggleHtmlRenderer(bool),
 }

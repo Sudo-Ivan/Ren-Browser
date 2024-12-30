@@ -1,4 +1,4 @@
-use iced::widget::{column, container, row, text, text_input};
+use iced::widget::{checkbox, column, container, row, text, text_input};
 use iced::{Element, Length};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -12,6 +12,7 @@ const SETTINGS_FILE: &str = "ren_browser.toml";
 pub struct RenSettings {
     pub window: WindowSettings,
     pub appearance: AppearanceSettings,
+    pub features: FeatureSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,12 +27,18 @@ pub struct AppearanceSettings {
     pub sidebar_width: u16,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FeatureSettings {
+    pub html_renderer: bool,
+}
+
 #[derive(Debug, Clone)]
 pub enum SettingUpdate {
     WindowWidth(u32),
     WindowHeight(u32),
     TextSize(u16),
     SidebarWidth(u16),
+    HtmlRenderer(bool),
 }
 
 impl Default for RenSettings {
@@ -44,6 +51,9 @@ impl Default for RenSettings {
             appearance: AppearanceSettings {
                 text_size: 14,
                 sidebar_width: 250,
+            },
+            features: FeatureSettings {
+                html_renderer: false,
             },
         }
     }
@@ -83,22 +93,20 @@ impl RenSettings {
                 row![
                     text("Width: ").width(Length::Fixed(100.0)),
                     text_input("width", &self.window.width.to_string())
-                        .on_input(|s| {
-                            s.parse()
-                                .map(SettingUpdate::WindowWidth)
-                                .unwrap_or_else(|_| SettingUpdate::WindowWidth(1280))
-                        })
+                        .on_input(|s| s
+                            .parse()
+                            .map(SettingUpdate::WindowWidth)
+                            .unwrap_or_else(|_| SettingUpdate::WindowWidth(1280)))
                         .style(Styles::settings_input())
                         .width(Length::Fixed(100.0))
                 ],
                 row![
                     text("Height: ").width(Length::Fixed(100.0)),
                     text_input("height", &self.window.height.to_string())
-                        .on_input(|s| {
-                            s.parse()
-                                .map(SettingUpdate::WindowHeight)
-                                .unwrap_or_else(|_| SettingUpdate::WindowHeight(720))
-                        })
+                        .on_input(|s| s
+                            .parse()
+                            .map(SettingUpdate::WindowHeight)
+                            .unwrap_or_else(|_| SettingUpdate::WindowHeight(720)))
                         .style(Styles::settings_input())
                         .width(Length::Fixed(100.0))
                 ]
@@ -115,22 +123,20 @@ impl RenSettings {
                 row![
                     text("Text Size: ").width(Length::Fixed(100.0)),
                     text_input("text size", &self.appearance.text_size.to_string())
-                        .on_input(|s| {
-                            s.parse()
-                                .map(SettingUpdate::TextSize)
-                                .unwrap_or_else(|_| SettingUpdate::TextSize(14))
-                        })
+                        .on_input(|s| s
+                            .parse()
+                            .map(SettingUpdate::TextSize)
+                            .unwrap_or_else(|_| SettingUpdate::TextSize(14)))
                         .style(Styles::settings_input())
                         .width(Length::Fixed(100.0))
                 ],
                 row![
                     text("Sidebar Width: ").width(Length::Fixed(100.0)),
                     text_input("sidebar width", &self.appearance.sidebar_width.to_string())
-                        .on_input(|s| {
-                            s.parse()
-                                .map(SettingUpdate::SidebarWidth)
-                                .unwrap_or_else(|_| SettingUpdate::SidebarWidth(250))
-                        })
+                        .on_input(|s| s
+                            .parse()
+                            .map(SettingUpdate::SidebarWidth)
+                            .unwrap_or_else(|_| SettingUpdate::SidebarWidth(250)))
                         .style(Styles::settings_input())
                         .width(Length::Fixed(100.0))
                 ]
@@ -141,8 +147,24 @@ impl RenSettings {
         .style(Styles::settings_section())
         .width(Length::Fill);
 
+        let features_section = container(
+            column![
+                text("Features").size(20),
+                row![
+                    text("HTML Renderer: ").width(Length::Fixed(100.0)),
+                    checkbox("", self.features.html_renderer, |checked| {
+                        SettingUpdate::HtmlRenderer(checked)
+                    })
+                ]
+            ]
+            .spacing(10)
+            .padding(15),
+        )
+        .style(Styles::settings_section())
+        .width(Length::Fill);
+
         container(
-            column![window_section, appearance_section]
+            column![window_section, appearance_section, features_section]
                 .spacing(20)
                 .padding(20)
                 .width(Length::Fill)
