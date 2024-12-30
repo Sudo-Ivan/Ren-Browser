@@ -1,5 +1,14 @@
 # Security Policy
 
+Python:
+- [bandit](https://github.com/PyCQA/bandit)
+- [ruff](https://github.com/astral-sh/ruff)
+
+Rust:
+- [cargo-audit](https://github.com/rustsec/cargo-audit)
+- [cargo fmt](https://github.com/rust-lang/rustfmt)
+
+
 ## Reporting a Vulnerability
 
 Report security issues to [security@quad4.io](mailto:security@quad4.io)
