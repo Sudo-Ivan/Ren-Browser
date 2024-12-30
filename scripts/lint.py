@@ -12,10 +12,10 @@ def lint_files():
     for file in python_files:
         print(f"  • {file.relative_to(root_dir)}")
 
-    print("\n🔎 Running Pylint...")
+    print("\n🔎 Running Ruff linting...")
     try:
         result = subprocess.run(
-            ["pylint", "--output-format=colorized", *[str(f) for f in python_files]],
+            ["ruff", "check", *[str(f) for f in python_files]],
             check=True,
             capture_output=True,
             text=True,
@@ -27,7 +27,7 @@ def lint_files():
         if result.stdout.strip():
             print("\nSummary:")
             summary_lines = [
-                line for line in result.stdout.split("\n") if "rated at" in line
+                line for line in result.stdout.split("\n") if "Found" in line
             ]
             if summary_lines:
                 print(summary_lines[-1])

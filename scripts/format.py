@@ -12,10 +12,12 @@ def format_files():
     for file in python_files:
         print(f"  • {file.relative_to(root_dir)}")
 
-    print("\n🎨 Formatting with Black...")
+    print("\n🎨 Formatting with Ruff...")
     try:
         subprocess.run(
-            ["black", *[str(f) for f in python_files]], check=True, capture_output=True
+            ["ruff", "format", *[str(f) for f in python_files]],
+            check=True,
+            capture_output=True,
         )
         print("✨ Formatting complete!")
         return 0

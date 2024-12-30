@@ -70,9 +70,9 @@ python ren_api/main.py --debug # or poetry run python ren_api/main.py --debug
 ## Poetry Scripts
 
 ```bash
-poetry run format # black
+poetry run format # ruff
+poetry run lint # ruff
 poetry run scan # bandit
-poetry run lint # pylint
 ```
 
 ### Libraries Used

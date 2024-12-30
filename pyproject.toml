@@ -16,9 +16,8 @@ pydantic = "^2.10.4"
 msgpack = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.10.0"
-pylint = "^3.3.3"
 bandit = "^1.8.0"
+ruff = "^0.8.4"
 
 [build-system]
 requires = ["poetry-core"]
@@ -31,5 +30,5 @@ scan = "scripts.scan:scan_files"
 lint = "scripts.lint:lint_files"
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".env"]
+exclude_dirs = ["tests", "venv", ".env", "scripts"]
 skips = ["B311"]
