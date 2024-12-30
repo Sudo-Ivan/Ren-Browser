@@ -142,9 +142,13 @@ class PathResponseHandler:
         self.handler = handler
         self.logger = logging.getLogger(__name__)
 
-    def received_announce(self, destination_hash, announced_identity, app_data, announce_packet_hash):
+    def received_announce(
+        self, destination_hash, announced_identity, app_data, announce_packet_hash
+    ):
         self.logger.debug(f"Path response received for {destination_hash.hex()}")
-        self.handler(destination_hash, announced_identity, app_data, announce_packet_hash)
+        self.handler(
+            destination_hash, announced_identity, app_data, announce_packet_hash
+        )
 
 
 class LXMFHandler:
@@ -406,12 +410,16 @@ class LXMFHandler:
         self, destination_hash: str, page_path: str, field_data: Optional[Dict] = None
     ) -> Dict:
         try:
-            self.logger.debug(f"Starting page download from {destination_hash} path: {page_path}")
+            self.logger.debug(
+                f"Starting page download from {destination_hash} path: {page_path}"
+            )
             dest_hash_bytes = bytes.fromhex(destination_hash)
 
             identity = RNS.Identity.recall(dest_hash_bytes)
             if not identity:
-                self.logger.debug(f"No identity found for {destination_hash}, requesting path")
+                self.logger.debug(
+                    f"No identity found for {destination_hash}, requesting path"
+                )
                 RNS.Transport.request_path(dest_hash_bytes)
                 raise HTTPException(status_code=404, detail="Identity not found")
 
@@ -427,12 +435,16 @@ class LXMFHandler:
             # Use our path-aware establish_link method
             self.logger.debug(f"Establishing link to {destination_hash}")
             link = await self.establish_link(dest_hash_bytes)
-            
+
             if not link or link.status != RNS.Link.ACTIVE:
-                self.logger.warning(f"Failed to establish active link to {destination_hash}")
+                self.logger.warning(
+                    f"Failed to establish active link to {destination_hash}"
+                )
                 raise HTTPException(status_code=504, detail="Could not establish link")
 
-            self.logger.debug(f"Link established, sending page request to {destination_hash}")
+            self.logger.debug(
+                f"Link established, sending page request to {destination_hash}"
+            )
             request_data = {"request": "page", "path": page_path}
             if field_data:
                 request_data["data"] = field_data
@@ -445,8 +457,12 @@ class LXMFHandler:
                     self.logger.debug(f"Received response from {destination_hash}")
                     response_future.set_result(request_receipt.response)
                 else:
-                    self.logger.warning(f"No response data received from {destination_hash}")
-                    response_future.set_exception(Exception("No response data received"))
+                    self.logger.warning(
+                        f"No response data received from {destination_hash}"
+                    )
+                    response_future.set_exception(
+                        Exception("No response data received")
+                    )
 
             def on_failed(_):
                 if not response_future.done():
@@ -465,7 +481,9 @@ class LXMFHandler:
             try:
                 self.logger.debug(f"Waiting for response from {destination_hash}")
                 response = await asyncio.wait_for(response_future, timeout=15)
-                self.logger.debug(f"Successfully received response from {destination_hash}")
+                self.logger.debug(
+                    f"Successfully received response from {destination_hash}"
+                )
                 return {
                     "content": (
                         response.decode("utf-8") if response else "No content received"
@@ -491,7 +509,7 @@ class LXMFHandler:
         """Clean shutdown of Reticulum"""
         # Deregister path handler
         RNS.Transport.deregister_announce_handler(self.path_handler)
-        
+
         # Close all cached links
         for link in self.cached_links.values():
             link.teardown()
@@ -503,17 +521,23 @@ class LXMFHandler:
         except Exception as e:
             self.logger.error(f"Error during shutdown: {str(e)}")
 
-    async def establish_link(self, destination_hash: bytes, timeout: int = 15) -> RNS.Link:
+    async def establish_link(
+        self, destination_hash: bytes, timeout: int = 15
+    ) -> RNS.Link:
         """Establish a link with path discovery"""
         try:
-            self.logger.debug(f"Attempting to establish link to {destination_hash.hex()}")
-            
+            self.logger.debug(
+                f"Attempting to establish link to {destination_hash.hex()}"
+            )
+
             # Check if we already have a path
             if RNS.Transport.has_path(destination_hash):
                 self.logger.debug(f"Using existing path for {destination_hash.hex()}")
                 hops = RNS.Transport.hops_to(destination_hash)
                 next_hop = RNS.Transport.next_hop(destination_hash)
-                self.logger.debug(f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}")
+                self.logger.debug(
+                    f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}"
+                )
                 return await self._create_link(destination_hash, timeout)
 
             # Request path and wait for response
@@ -526,7 +550,9 @@ class LXMFHandler:
                     hops = RNS.Transport.hops_to(destination_hash)
                     next_hop = RNS.Transport.next_hop(destination_hash)
                     self.logger.debug(f"Path found for {destination_hash.hex()}")
-                    self.logger.debug(f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}")
+                    self.logger.debug(
+                        f"Path info: hops={hops}, next_hop={next_hop.hex() if next_hop else None}"
+                    )
                     return await self._create_link(destination_hash, timeout)
                 await asyncio.sleep(0.1)
 
@@ -541,30 +567,30 @@ class LXMFHandler:
         """Helper method to create and establish a link"""
         try:
             self.logger.debug(f"Creating link for {destination_hash.hex()}")
-            
+
             # Log transport state
             self.logger.debug(f"Transport state for {destination_hash.hex()}:")
             self.logger.debug(f"  Has path: {RNS.Transport.has_path(destination_hash)}")
             self.logger.debug(f"  Hops: {RNS.Transport.hops_to(destination_hash)}")
             next_hop = RNS.Transport.next_hop(destination_hash)
             self.logger.debug(f"  Next hop: {next_hop.hex() if next_hop else None}")
-            
+
             identity = RNS.Identity.recall(destination_hash)
             if not identity:
                 self.logger.error(f"No identity found for {destination_hash.hex()}")
                 raise HTTPException(status_code=404, detail="Identity not found")
-            
+
             destination = RNS.Destination(
                 identity,
                 RNS.Destination.OUT,
                 RNS.Destination.SINGLE,
                 "nomadnetwork",  # Make sure we're using the right aspect
-                "node"
+                "node",
             )
 
             self.logger.debug(f"Creating link with destination: {destination}")
             link = RNS.Link(destination)
-            
+
             # Monitor link establishment
             start_time = time.time()
             last_status = None
@@ -573,12 +599,14 @@ class LXMFHandler:
                 if current_status != last_status:
                     self.logger.debug(f"Link status changed to: {current_status}")
                     last_status = current_status
-                    
+
                 if current_status == RNS.Link.ACTIVE:
-                    self.logger.debug(f"Successfully established link to {destination_hash.hex()}")
+                    self.logger.debug(
+                        f"Successfully established link to {destination_hash.hex()}"
+                    )
                     self.cached_links[destination_hash] = link
                     return link
-                    
+
                 await asyncio.sleep(0.1)
 
             self.logger.warning(
@@ -619,13 +647,15 @@ class LXMFHandler:
                 with open(self.paths_file, "r") as f:
                     saved_paths = json.load(f)
                     # Convert string keys back to bytes
-                    self.paths = {
-                        bytes.fromhex(k): v for k, v in saved_paths.items()
-                    }
-                self.logger.info(f"Loaded {len(self.paths)} paths from {self.paths_file}")
+                    self.paths = {bytes.fromhex(k): v for k, v in saved_paths.items()}
+                self.logger.info(
+                    f"Loaded {len(self.paths)} paths from {self.paths_file}"
+                )
                 if self.logger.isEnabledFor(logging.DEBUG):
                     for dest_hash, path_info in self.paths.items():
-                        self.logger.debug(f"Loaded path: {dest_hash.hex()} -> next_hop: {path_info['next_hop']}, hops: {path_info['hops']}")
+                        self.logger.debug(
+                            f"Loaded path: {dest_hash.hex()} -> next_hop: {path_info['next_hop']}, hops: {path_info['hops']}"
+                        )
             except Exception as e:
                 self.logger.error(f"Error loading paths: {str(e)}")
                 self.paths = {}
@@ -634,41 +664,45 @@ class LXMFHandler:
         """Save paths to JSON file"""
         try:
             # Convert bytes keys to hex strings for JSON serialization
-            paths_to_save = {
-                k.hex(): v for k, v in self.paths.items()
-            }
+            paths_to_save = {k.hex(): v for k, v in self.paths.items()}
             with open(self.paths_file, "w") as f:
                 json.dump(paths_to_save, f, indent=2)
             self.logger.debug(f"Saved {len(self.paths)} paths to {self.paths_file}")
         except Exception as e:
             self.logger.error(f"Error saving paths: {str(e)}")
 
-    def _handle_path_response(self, destination_hash, announced_identity, app_data, announce_packet_hash):
+    def _handle_path_response(
+        self, destination_hash, announced_identity, app_data, announce_packet_hash
+    ):
         """Handle path response announces"""
         try:
             self.logger.debug(f"Processing path response for {destination_hash.hex()}")
-            
+
             if RNS.Transport.has_path(destination_hash):
                 hops = RNS.Transport.hops_to(destination_hash)
                 next_hop = RNS.Transport.next_hop(destination_hash)
                 next_hop_hex = next_hop.hex() if next_hop else None
-                
+
                 self.logger.debug(f"Path details for {destination_hash.hex()}:")
                 self.logger.debug(f"  - Hops: {hops}")
                 self.logger.debug(f"  - Next hop: {next_hop_hex}")
-                self.logger.debug(f"  - Transport has path: {RNS.Transport.has_path(destination_hash)}")
-                
+                self.logger.debug(
+                    f"  - Transport has path: {RNS.Transport.has_path(destination_hash)}"
+                )
+
                 path_info = {
                     "hops": hops,
                     "next_hop": next_hop_hex,
-                    "updated_at": int(time.time())
+                    "updated_at": int(time.time()),
                 }
                 self.paths[destination_hash] = path_info
                 self.save_paths()
                 self.logger.debug(f"Saved path info for {destination_hash.hex()}")
             else:
-                self.logger.warning(f"No path available for {destination_hash.hex()} in path response handler")
-                
+                self.logger.warning(
+                    f"No path available for {destination_hash.hex()} in path response handler"
+                )
+
         except Exception as e:
             self.logger.error(f"Error handling path response: {str(e)}")
 
