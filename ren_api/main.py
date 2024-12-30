@@ -111,16 +111,10 @@ class AnnounceHandler:
         self.aspect_filter = aspect_filter
         self.received_announce_callback = received_announce_callback
 
-    def received_announce(
-        self, destination_hash, announced_identity, app_data, announce_packet_hash
-    ):
+    def received_announce(self, destination_hash, announced_identity, app_data):
         try:
             self.received_announce_callback(
-                self.aspect_filter,
-                destination_hash,
-                announced_identity,
-                app_data,
-                announce_packet_hash,
+                self.aspect_filter, destination_hash, announced_identity, app_data
             )
         except Exception as e:
             logging.error(f"Error handling announce: {str(e)}")
@@ -142,13 +136,9 @@ class PathResponseHandler:
         self.handler = handler
         self.logger = logging.getLogger(__name__)
 
-    def received_announce(
-        self, destination_hash, announced_identity, app_data, announce_packet_hash
-    ):
+    def received_announce(self, destination_hash, announced_identity, app_data):
         self.logger.debug(f"Path response received for {destination_hash.hex()}")
-        self.handler(
-            destination_hash, announced_identity, app_data, announce_packet_hash
-        )
+        self.handler(destination_hash, announced_identity, app_data)
 
 
 class LXMFHandler:
@@ -226,14 +216,7 @@ class LXMFHandler:
         self.identities_file = os.path.join(self.config_path, "identities.json")
         self.load_identities()
 
-    def _handle_announce(
-        self,
-        aspect,
-        destination_hash,
-        announced_identity,
-        app_data,
-        announce_packet_hash,
-    ):
+    def _handle_announce(self, aspect, destination_hash, announced_identity, app_data):
         """Central announce handler for all aspects"""
         self.logger.info(
             f"Received {aspect} announce from {RNS.prettyhexrep(destination_hash)}"
@@ -566,6 +549,7 @@ class LXMFHandler:
                 f"Attempting to establish link to {destination_hash.hex()}"
             )
 
+            # First check cached links
             if destination_hash in self.cached_links:
                 link = self.cached_links[destination_hash]
                 if link.status == RNS.Link.ACTIVE:
@@ -579,30 +563,50 @@ class LXMFHandler:
                     )
                     del self.cached_links[destination_hash]
 
+            # Get or request identity
             identity = None
 
+            # Check stored identities first
             for id_hash, id_data in self.identities.items():
                 if destination_hash.hex().startswith(
                     id_hash[: len(destination_hash.hex())]
                 ):
-                    identity = id_data
-                    break
+                    try:
+                        identity = RNS.Identity.from_bytes(
+                            base64.b64decode(id_data["public_key"])
+                        )
+                        self.logger.debug(
+                            f"Using stored identity for {destination_hash.hex()}"
+                        )
+                        break
+                    except Exception as e:
+                        self.logger.warning(f"Failed to load stored identity: {e}")
 
+            # Try RNS recall if not found in storage
             if not identity:
                 identity = RNS.Identity.recall(destination_hash)
 
             if not identity:
+                self.logger.debug(
+                    f"No identity found, requesting path for {destination_hash.hex()}"
+                )
                 RNS.Transport.request_path(destination_hash)
-                start_time = time.time()
-                while time.time() - start_time < timeout:
+
+                # Wait for path response which might include identity
+                path_timeout = time.time() + timeout
+                while time.time() < path_timeout:
                     identity = RNS.Identity.recall(destination_hash)
                     if identity:
+                        self.logger.debug(
+                            f"Received identity for {destination_hash.hex()}"
+                        )
                         break
                     await asyncio.sleep(0.1)
 
-            if not identity:
-                raise HTTPException(status_code=404, detail="Identity not found")
+                if not identity:
+                    raise HTTPException(status_code=404, detail="Identity not found")
 
+            # Create destination and link
             destination = RNS.Destination(
                 identity,
                 RNS.Destination.OUT,
@@ -622,19 +626,12 @@ class LXMFHandler:
                     )
                     self.cached_links[destination_hash] = link
                     return link
-                elif link.status == RNS.Link.CLOSED:
-                    self.logger.warning(
-                        f"Link closed during establishment for {destination_hash.hex()}"
-                    )
+                elif link.status == RNS.Link.CLOSED:  # Link is closed/failed
                     raise HTTPException(
-                        status_code=504, detail="Link closed during establishment"
+                        status_code=504, detail="Link establishment failed"
                     )
                 await asyncio.sleep(0.1)
 
-            self.logger.warning(
-                f"Link establishment timed out for {destination_hash.hex()}"
-            )
-            link.teardown()
             raise HTTPException(status_code=504, detail="Link establishment timed out")
 
         except Exception as e:
@@ -693,9 +690,7 @@ class LXMFHandler:
         except Exception as e:
             self.logger.error(f"Error saving paths: {str(e)}")
 
-    def _handle_path_response(
-        self, destination_hash, announced_identity, app_data, announce_packet_hash
-    ):
+    def _handle_path_response(self, destination_hash, announced_identity, app_data):
         """Handle path response announces"""
         try:
             self.logger.debug(f"Processing path response for {destination_hash.hex()}")
@@ -708,9 +703,6 @@ class LXMFHandler:
                 self.logger.debug(f"Path details for {destination_hash.hex()}:")
                 self.logger.debug(f"  - Hops: {hops}")
                 self.logger.debug(f"  - Next hop: {next_hop_hex}")
-                self.logger.debug(
-                    f"  - Transport has path: {RNS.Transport.has_path(destination_hash)}"
-                )
 
                 path_info = {
                     "hops": hops,
