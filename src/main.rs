@@ -31,6 +31,11 @@ use crate::Message as LibMessage;
 mod caching;
 use caching::PageCache;
 
+mod monitoring;
+
+use monitoring::AppMonitor;
+use std::time::Duration;
+
 const VERSION: &str = "0.3.0";
 
 pub fn main() -> iced::Result {
@@ -52,6 +57,17 @@ pub fn main() -> iced::Result {
         .unwrap();
 
     debug!("Starting Ren Browser in debug mode");
+
+    // Initialize monitoring
+    let mut monitor = AppMonitor::new();
+
+    // Start a monitoring thread
+    std::thread::spawn(move || {
+        loop {
+            monitor.log_usage();
+            std::thread::sleep(Duration::from_secs(5)); // Log every 5 seconds
+        }
+    });
 
     RenBrowser::run(Settings {
         window: iced::window::Settings {
@@ -615,7 +631,7 @@ impl Application for RenBrowser {
                 container(
                     text("Loading...")
                         .size(TEXT_SIZE)
-                        .style(theme::Text::Color(Color::from_rgb(0.7, 0.7, 0.7)))
+                        .style(theme::Text::Color(Color::from_rgb(0.7, 0.7, 0.7))),
                 )
                 .width(Length::Fill)
                 .height(Length::Fill)
@@ -711,7 +727,7 @@ impl Application for RenBrowser {
                 let notification: Element<_> = container(
                     text("Settings saved")
                         .size(12)
-                        .style(theme::Text::Color(Color::WHITE))
+                        .style(theme::Text::Color(Color::WHITE)),
                 )
                 .style(Styles::save_notification())
                 .padding(8)
@@ -719,9 +735,7 @@ impl Application for RenBrowser {
                 .into();
                 notification
             } else {
-                container(text(""))
-                    .width(Length::Fill)
-                    .into()
+                container(text("")).width(Length::Fill).into()
             }
         ]
         .width(Length::Fill)
