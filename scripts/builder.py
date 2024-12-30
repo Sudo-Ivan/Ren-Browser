@@ -33,9 +33,3 @@ def build_api():
             "--clean",
         ]
     )
-
-    # Make executable
-    if sys.platform.startswith("linux") or sys.platform == "darwin":
-        executable = os.path.join("dist", "ren-api")
-        if os.path.exists(executable):
-            os.chmod(executable, 0o755)
