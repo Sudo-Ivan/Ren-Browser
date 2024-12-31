@@ -1,5 +1,5 @@
-use iced::widget::{checkbox, column, container, row, text, text_input};
-use iced::{Element, Length};
+use iced::widget::{button, checkbox, column, container, row, text, text_input};
+use iced::{theme, Element, Length};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -39,6 +39,7 @@ pub enum SettingUpdate {
     TextSize(u16),
     SidebarWidth(u16),
     HtmlRenderer(bool),
+    ClearCache,
 }
 
 impl Default for RenSettings {
@@ -91,31 +92,25 @@ impl RenSettings {
             column![
                 text("Window Settings").size(20),
                 row![
-                    text("Width: ").width(Length::Fixed(100.0)),
+                    text("Width:").width(Length::Fill),
                     text_input("width", &self.window.width.to_string())
-                        .on_input(|s| s
-                            .parse()
-                            .map(SettingUpdate::WindowWidth)
-                            .unwrap_or_else(|_| SettingUpdate::WindowWidth(1280)))
-                        .style(Styles::settings_input())
+                        .on_input(|s| {
+                            SettingUpdate::WindowWidth(s.parse().unwrap_or(self.window.width))
+                        })
                         .width(Length::Fixed(100.0))
                 ],
                 row![
-                    text("Height: ").width(Length::Fixed(100.0)),
+                    text("Height:").width(Length::Fill),
                     text_input("height", &self.window.height.to_string())
-                        .on_input(|s| s
-                            .parse()
-                            .map(SettingUpdate::WindowHeight)
-                            .unwrap_or_else(|_| SettingUpdate::WindowHeight(720)))
-                        .style(Styles::settings_input())
+                        .on_input(|s| {
+                            SettingUpdate::WindowHeight(s.parse().unwrap_or(self.window.height))
+                        })
                         .width(Length::Fixed(100.0))
                 ]
             ]
-            .spacing(10)
-            .padding(15),
+            .spacing(10),
         )
-        .style(Styles::settings_section())
-        .width(Length::Fill);
+        .style(Styles::settings_section());
 
         let appearance_section = container(
             column![
@@ -163,16 +158,26 @@ impl RenSettings {
         .style(Styles::settings_section())
         .width(Length::Fill);
 
-        container(
-            column![window_section, appearance_section, features_section]
-                .spacing(20)
-                .padding(20)
-                .width(Length::Fill)
-                .max_width(400),
+        let cache_section = container(
+            column![
+                text("Cache Settings").size(20),
+                button(text("Clear Page Cache"))
+                    .on_press(SettingUpdate::ClearCache)
+                    .width(Length::Fill)
+                    .style(theme::Button::Primary)
+            ]
+            .spacing(10),
         )
-        .style(Styles::settings_container())
-        .width(Length::Fill)
-        .center_x()
+        .style(Styles::settings_section());
+
+        column![
+            window_section,
+            cache_section,
+            appearance_section,
+            features_section
+        ]
+        .spacing(20)
+        .padding(20)
         .into()
     }
 }

@@ -1,5 +1,5 @@
-use super::micron_constants::{
-    ASCII_ART_MARKER, COMMENT_MARKER, DEFAULT_DIVIDER_CHAR, DEFAULT_DIVIDER_WIDTH,
+use crate::renderers::parsers::micron_constants::{
+    ASCII_ART_MARKER, COMMENT_MARKER, DEFAULT_BG, DEFAULT_DIVIDER_CHAR, DEFAULT_DIVIDER_WIDTH,
     DEFAULT_LINK_COLOR, DEFAULT_TEXT_COLOR, DIVIDER_MARKER, ESCAPE_CHAR, LINK_END, LINK_START,
     LITERAL_TOGGLE, NAMED_COLORS, SECTION_COLORS, SECTION_MARKER, STYLE_MARKER,
 };
@@ -44,7 +44,7 @@ pub struct MicronStyle {
     pub section_depth: u8,
     pub alignment: TextAlignment,
     pub selectable: bool,
-    pub link: Option<Box<Link>>, // Use Box to break the recursion
+    pub link: Option<Box<Link>>,
 }
 
 impl Default for MicronStyle {
@@ -53,7 +53,7 @@ impl Default for MicronStyle {
             bold: false,
             italic: false,
             underline: false,
-            foreground: Some(Color::from_rgb(0.87, 0.87, 0.87)),
+            foreground: Some(DEFAULT_TEXT_COLOR),
             background: None,
             section_depth: 0,
             alignment: TextAlignment::Default,

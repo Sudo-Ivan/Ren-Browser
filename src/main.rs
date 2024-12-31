@@ -1,11 +1,11 @@
 use iced::{
-    alignment::{Alignment, Horizontal},
+    alignment::{Horizontal, Vertical},
     executor,
     keyboard::{self, KeyCode},
     theme::{self, Theme},
     time,
     widget::{button, column, container, row, scrollable, text, text_input, Column, Row},
-    Application, Color, Command, Element, Length, Settings, Subscription,
+    Alignment, Application, Color, Command, Element, Length, Settings, Subscription,
 };
 
 use log::{debug, info, warn, LevelFilter};
@@ -13,30 +13,35 @@ use simple_logger::SimpleLogger;
 use std::env;
 
 use ren_browser::styles::{
-    Styles, CLOSE_BUTTON_SIZE, CONTENT_PADDING, PADDING, SIDEBAR_WIDTH, SPACING, TAB_HEIGHT,
-    TEXT_SIZE,
+    Styles, CLOSE_BUTTON_SIZE, CONTENT_PADDING, NEW_TAB_BUTTON_SIZE, PADDING, SIDEBAR_WIDTH,
+    SPACING, TAB_HEIGHT, TEXT_SIZE,
 };
 
 mod api;
-use api::{fetch_api_status, fetch_nodes, fetch_page, ApiStatus, Node};
+use api::ren_api::{fetch_api_status, fetch_nodes, fetch_page, ApiStatus, Node};
 
 mod renderers;
-use renderers::mu_renderer::{MicronRenderer, MicronStyle, RendererType, TextAlignment};
+use ren_browser::renderers::mu_renderer::{
+    MicronRenderer, MicronStyle, RendererType, TextAlignment,
+};
 
-mod ren_settings;
-use ren_settings::{RenSettings, SettingUpdate};
+mod config;
+use config::ren_settings::{RenSettings, SettingUpdate};
 
 use itertools::Itertools;
 
 use crate::Message as LibMessage;
 
-mod caching;
-use caching::PageCache;
+mod pages;
+use pages::caching::PageCache;
 
-mod monitoring;
+mod profiling;
+use profiling::monitoring::AppMonitor;
 
-use monitoring::AppMonitor;
 use std::time::Duration;
+
+mod interface;
+use interface::tabs::{tab_bar, Tab};
 
 pub fn main() -> iced::Result {
     let debug = env::args().any(|arg| arg == "--debug");
@@ -76,66 +81,6 @@ pub fn main() -> iced::Result {
         },
         ..Default::default()
     })
-}
-
-#[derive(Debug, Clone)]
-struct Tab {
-    id: usize,
-    address: String,
-    content: String,
-    loading: bool,
-    show_address: bool,
-    rendered_content: Vec<(String, MicronStyle)>,
-    renderer_type: RendererType,
-    display_name: Option<String>,
-}
-
-impl Tab {
-    fn new(id: usize) -> Self {
-        Self {
-            id,
-            address: String::new(),
-            content: String::from("Welcome to Ren Browser"),
-            loading: false,
-            show_address: true,
-            rendered_content: Vec::new(),
-            renderer_type: RendererType::default(),
-            display_name: Some("New Tab".to_string()),
-        }
-    }
-
-    fn settings() -> Self {
-        Self {
-            id: 0,
-            address: String::from("settings"),
-            content: String::new(),
-            loading: false,
-            show_address: false,
-            rendered_content: vec![
-                (
-                    "Settings".to_string(),
-                    MicronStyle {
-                        alignment: TextAlignment::Center,
-                        foreground: None,
-                        link: None,
-                        background: None,
-                        bold: false,
-                        italic: false,
-                        underline: false,
-                        section_depth: 0,
-                        selectable: true,
-                    },
-                ),
-                ("\nKeyboard Shortcuts:".to_string(), MicronStyle::default()),
-                ("F11: Open Settings".to_string(), MicronStyle::default()),
-                ("Ctrl+R: Reload Page".to_string(), MicronStyle::default()),
-                ("Ctrl+T: New Tab".to_string(), MicronStyle::default()),
-                ("Ctrl+W: Close Tab".to_string(), MicronStyle::default()),
-            ],
-            renderer_type: RendererType::Plain,
-            display_name: Some("Settings".to_string()),
-        }
-    }
 }
 
 struct RenBrowser {
@@ -434,10 +379,13 @@ impl Application for RenBrowser {
                     SettingUpdate::HtmlRenderer(enabled) => {
                         self.settings.features.html_renderer = enabled
                     }
+                    SettingUpdate::ClearCache => {
+                        self.page_cache.clear();
+                        self.show_save_notification = true;
+                        self.save_notification_timer = Some(std::time::Instant::now());
+                    }
                 }
                 self.settings.save();
-                self.show_save_notification = true;
-                self.save_notification_timer = Some(std::time::Instant::now());
                 Command::none()
             }
             Message::SaveSettings => {
@@ -545,77 +493,14 @@ impl Application for RenBrowser {
         .spacing(SPACING)
         .padding(PADDING);
 
-        let tab_bar = Row::with_children(
-            self.tabs
-                .iter()
-                .map(|tab| {
-                    let tab_text = if tab.address.is_empty() {
-                        "New Tab"
-                    } else {
-                        tab.display_name.as_deref().unwrap_or_else(|| {
-                            if self.active_tab
-                                == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0)
-                            {
-                                &tab.address
-                            } else {
-                                tab.address.split('/').last().unwrap_or("New Tab")
-                            }
-                        })
-                    };
-
-                    button(
-                        row![
-                            container(text(tab_text).size(TEXT_SIZE))
-                                .width(Length::Fill)
-                                .center_x()
-                                .center_y(),
-                            container(
-                                button(text("×").size(CLOSE_BUTTON_SIZE))
-                                    .on_press(Message::CloseTab(tab.id))
-                                    .style(Styles::close_button())
-                                    .padding(0)
-                            )
-                            .width(Length::Shrink)
-                            .height(Length::Fill)
-                            .center_y()
-                            .padding([0, 5])
-                        ]
-                        .spacing(5)
-                        .width(Length::Fill)
-                        .height(Length::Fill)
-                        .align_items(Alignment::Center),
-                    )
-                    .on_press(Message::SelectTab(tab.id))
-                    .style(Styles::tab_button(
-                        self.active_tab
-                            == self.tabs.iter().position(|t| t.id == tab.id).unwrap_or(0),
-                    ))
-                    .width(Length::Fixed(150.0))
-                    .height(Length::Fixed(TAB_HEIGHT as f32))
-                    .padding([2, 8])
-                    .into()
-                })
-                .chain(std::iter::once(
-                    container(
-                        button(text("+").size(TEXT_SIZE + 2))
-                            .on_press(Message::AddTab)
-                            .style(Styles::new_tab_button())
-                            .padding([2, 8]),
-                    )
-                    .center_y()
-                    .height(Length::Fixed(TAB_HEIGHT as f32))
-                    .into(),
-                ))
-                .collect(),
-        )
-        .spacing(2)
-        .padding(2);
+        let tab_bar = tab_bar(&self.tabs, self.active_tab);
 
         let address_bar = if let Some(tab) = self.tabs.get(self.active_tab) {
             if tab.show_address {
                 row![
                     text_input("Enter address...", &self.address_input)
                         .on_input(Message::AddressInputChanged)
+                        .on_submit(Message::LoadPage)
                         .padding(8),
                     button("Go")
                         .on_press(Message::LoadPage)
@@ -633,7 +518,6 @@ impl Application for RenBrowser {
 
         let content = if let Some(tab) = self.tabs.get(self.active_tab) {
             if tab.loading {
-                // Replace spinner with Loading... text for now
                 container(
                     text("Loading...")
                         .size(TEXT_SIZE)
@@ -643,11 +527,16 @@ impl Application for RenBrowser {
                 .height(Length::Fill)
                 .center_x()
                 .center_y()
+                .style(theme::Container::Custom(Box::new(
+                    Styles::content_container(false),
+                )))
             } else if tab.address == "settings" {
-                // Render settings page
                 container(self.settings.view().map(Message::UpdateSetting))
                     .width(Length::Fill)
                     .height(Length::Fill)
+                    .style(theme::Container::Custom(Box::new(
+                        Styles::content_container(true),
+                    )))
                     .into()
             } else {
                 container(
@@ -696,12 +585,18 @@ impl Application for RenBrowser {
                     .height(Length::Fill),
                 )
                 .width(Length::Fill)
+                .style(theme::Container::Custom(Box::new(
+                    Styles::content_container(!tab.rendered_content.is_empty()),
+                )))
                 .into()
             }
         } else {
             container(text("No tab selected"))
                 .width(Length::Fill)
                 .center_x()
+                .style(theme::Container::Custom(Box::new(
+                    Styles::content_container(false),
+                )))
                 .into()
         };
 
@@ -710,11 +605,11 @@ impl Application for RenBrowser {
             address_bar,
             container(
                 text(match self.tabs.get(self.active_tab) {
-                    Some(tab) => match tab.renderer_type {
+                    Some(tab) if !tab.address.is_empty() => match tab.renderer_type {
                         RendererType::Micron => "Micron Renderer",
                         RendererType::Plain => "Plain Text",
                     },
-                    None => "",
+                    _ => "",
                 })
                 .size(TEXT_SIZE - 2)
                 .style(theme::Text::Color(Styles::renderer_text()))
@@ -774,6 +669,7 @@ impl Application for RenBrowser {
                         (KeyCode::R, true) => Some(Message::ReloadPage),
                         (KeyCode::T, true) => Some(Message::AddTab),
                         (KeyCode::W, true) => Some(Message::CloseTab(0)),
+                        (KeyCode::Enter, false) => Some(Message::LoadPage),
                         _ => None,
                     }
                 } else {

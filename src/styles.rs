@@ -20,8 +20,8 @@ impl Styles {
         iced::theme::Button::Custom(Box::new(TabButtonStyle { active }))
     }
 
-    pub fn content_container() -> iced::Background {
-        iced::Background::Color(Color::from_rgb(0.12, 0.12, 0.12))
+    pub fn content_container(has_content: bool) -> ContentContainerStyle {
+        ContentContainerStyle::new(has_content)
     }
 
     pub fn muted_text() -> Color {
@@ -29,7 +29,7 @@ impl Styles {
     }
 
     pub fn text_color() -> Color {
-        Color::WHITE
+        Color::from_rgb(0.87, 0.87, 0.87)
     }
 
     pub fn text_color_muted() -> Color {
@@ -37,7 +37,7 @@ impl Styles {
     }
 
     pub fn renderer_text() -> Color {
-        Color::from_rgb(0.4, 0.4, 0.4)
+        Color::from_rgb(0.87, 0.87, 0.87)
     }
 
     pub fn spinner() -> iced::theme::Container {
@@ -134,7 +134,8 @@ pub const CONTENT_PADDING: u16 = 35;
 pub const BORDER_RADIUS: f32 = 8.0;
 pub const SPINNER_SIZE: f32 = 24.0;
 pub const SPINNER_BORDER: f32 = 2.5;
-pub const CLOSE_BUTTON_SIZE: u16 = TEXT_SIZE + 4;
+pub const CLOSE_BUTTON_SIZE: u16 = TEXT_SIZE + 12;
+pub const NEW_TAB_BUTTON_SIZE: u16 = 24;
 
 pub struct SpinnerStyle;
 
@@ -163,11 +164,11 @@ impl button::StyleSheet for CloseButtonStyle {
     fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             background: None,
-            border_radius: 0.0.into(),
+            border_radius: (CLOSE_BUTTON_SIZE as f32 / 2.0).into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             text_color: Color::from_rgb(0.7, 0.7, 0.7),
-            ..Default::default()
+            shadow_offset: iced::Vector::default(),
         }
     }
 
@@ -175,6 +176,7 @@ impl button::StyleSheet for CloseButtonStyle {
         let active = self.active(style);
         button::Appearance {
             text_color: Color::WHITE,
+            background: Some(iced::Background::Color(Color::from_rgb(0.3, 0.3, 0.3))),
             ..active
         }
     }
@@ -186,11 +188,11 @@ impl button::StyleSheet for NewTabButtonStyle {
     fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             background: None,
-            border_radius: 0.0.into(),
+            border_radius: 4.0.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             text_color: Color::from_rgb(0.7, 0.7, 0.7),
-            ..Default::default()
+            shadow_offset: iced::Vector::default(),
         }
     }
 
@@ -262,7 +264,7 @@ impl container::StyleSheet for SettingsContainerStyle {
 
     fn appearance(&self, _style: &Self::Style) -> container::Appearance {
         container::Appearance {
-            background: Some(iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.15))),
+            background: Some(iced::Background::Color(Color::from_rgb(0.0, 0.0, 0.0))),
             border_radius: 8.0.into(),
             border_width: 1.0,
             border_color: Color::from_rgb(0.3, 0.3, 0.3),
@@ -276,7 +278,7 @@ impl container::StyleSheet for SettingsSectionStyle {
 
     fn appearance(&self, _style: &Self::Style) -> container::Appearance {
         container::Appearance {
-            background: Some(iced::Background::Color(Color::from_rgb(0.18, 0.18, 0.18))),
+            background: Some(iced::Background::Color(Color::from_rgb(0.0, 0.0, 0.0))),
             border_radius: 6.0.into(),
             border_width: 0.0,
             ..Default::default()
@@ -341,6 +343,33 @@ impl container::StyleSheet for SaveNotificationStyle {
             ))),
             border_radius: 4.0.into(),
             border_width: 0.0,
+            ..Default::default()
+        }
+    }
+}
+
+pub struct ContentContainerStyle {
+    pub has_content: bool,
+}
+
+impl ContentContainerStyle {
+    pub fn new(has_content: bool) -> Self {
+        Self { has_content }
+    }
+}
+
+impl container::StyleSheet for ContentContainerStyle {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: if self.has_content {
+                Some(iced::Background::Color(Color::from_rgb(0.0, 0.0, 0.0)))
+            } else {
+                None
+            },
+            text_color: Some(Color::WHITE),
+            border_radius: 8.0.into(),
             ..Default::default()
         }
     }
