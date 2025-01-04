@@ -1,7 +1,7 @@
-# Ren Browser
+# Ren Browser (Halted)
 
-> [!NOTE]  
-> This is a work in progress 2024-2025.
+> [!WARNING]  
+> Archived in favor of a new simpler client design. Work on Ren Browser could resume in the future.
 
 ![Ren Browser](showcase.png)
 
