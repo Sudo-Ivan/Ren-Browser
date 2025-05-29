@@ -5,11 +5,13 @@ description = "A browser for the Reticulum Network."
 authors = [
     {name = "Sudo-Ivan"}
 ]
+module = "ren_browser.app"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "flet (>=0.28.3,<0.29.0)",
-    "rns (>=0.9.6,<0.10.0)"
+    "rns (>=0.9.6,<0.10.0)",
+    "pydantic (>=2.11.5,<3.0.0)"
 ]
 
 [build-system]
