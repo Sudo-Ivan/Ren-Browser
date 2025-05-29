@@ -84,6 +84,29 @@ def build_ui(page: Page):
 
     # Dynamic tabs manager for pages
     tab_manager = TabsManager(page)
+    def open_settings_tab(e=None):
+        import pathlib
+        config_path = pathlib.Path(__file__).resolve().parents[2] / "config" / "config"
+        try:
+            config_text = config_path.read_text()
+        except Exception as ex:
+            config_text = f"Error reading config: {ex}"
+        config_field = ft.TextField(label="Reticulum config", value=config_text, expand=True, multiline=True)
+        def on_save_config(ev):
+            try:
+                config_path.write_text(config_field.value)
+                page.snack_bar = ft.SnackBar(ft.Text("Config saved. Please restart the app."), open=True)
+            except Exception as ex:
+                page.snack_bar = ft.SnackBar(ft.Text(f"Error saving config: {ex}"), open=True)
+            page.update()
+        save_btn = ft.ElevatedButton("Save and Restart", on_click=on_save_config)
+        settings_content = ft.Column(expand=True, controls=[config_field, ft.Row([save_btn])])
+        tab_manager._add_tab_internal("Settings", settings_content)
+        idx = len(tab_manager.manager.tabs) - 1
+        tab_manager.select_tab(idx)
+        page.update()
+
+    page.appbar.actions = [ft.IconButton(ft.Icons.SETTINGS, tooltip="Settings", on_click=open_settings_tab)]
     Shortcuts(page, tab_manager)
     url_bar = ft.Row(
         controls=[
