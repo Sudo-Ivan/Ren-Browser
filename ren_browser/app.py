@@ -2,25 +2,36 @@ import argparse
 import subprocess
 import sys
 import pathlib
-import datetime
 
 import flet as ft
 from flet import AppView, Page
 
 from ren_browser.ui.ui import build_ui
+import RNS
 
-# Current renderer name
 RENDERER = "plaintext"
 
-ERROR_LOGS: list[str] = []
-
-def log_error(msg: str):
-    timestamp = datetime.datetime.now().isoformat()
-    ERROR_LOGS.append(f"[{timestamp}] {msg}")
-
 async def main(page: Page):
-    # Build the main UI layout
-    build_ui(page)
+    loader = ft.Column(
+        [ft.ProgressRing(), ft.Text("Initializing reticulum network")],
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        expand=True,
+    )
+    page.add(loader)
+    page.update()
+
+    def init_ret():
+        config_dir = pathlib.Path(__file__).resolve().parents[1] / "config"
+        try:
+            RNS.Reticulum(str(config_dir))
+        except (OSError, ValueError):
+            pass
+        page.controls.clear()
+        build_ui(page)
+        page.update()
+
+    page.run_thread(init_ret)
 
 def run():
     global RENDERER
@@ -32,7 +43,6 @@ def run():
     RENDERER = args.renderer
 
     if args.web:
-        # Run web mode on optional fixed port
         if args.port is not None:
             ft.app(main, view=AppView.WEB_BROWSER, port=args.port)
         else:
