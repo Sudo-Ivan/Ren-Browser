@@ -16,8 +16,8 @@ def build_ui(page: Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.appbar = ft.AppBar(title=ft.Text("Ren Browser"))
     page.padding = 20
-    page.window_width = 800
-    page.window_height = 600
+    # Maximize window for wide screens
+    page.window.maximized = True
 
     # Initialize page fetcher and announce service
     page_fetcher = PageFetcher()
@@ -59,7 +59,7 @@ def build_ui(page: Page):
                         new_control = render_plaintext(result)
                     tab["content_control"] = new_control
                     # Replace the content control in the tab's column
-                    tab["content"].controls[1] = new_control
+                    tab["content"].controls[0] = new_control
                     if tab_manager.manager.index == idx:
                         tab_manager.content_container.content = tab["content"]
                     page.update()
@@ -85,11 +85,33 @@ def build_ui(page: Page):
     # Dynamic tabs manager for pages
     tab_manager = TabsManager(page)
     Shortcuts(page, tab_manager)
-    # Main area: tab bar and content
+    url_bar = ft.Row(
+        controls=[
+            tab_manager.manager.tabs[tab_manager.manager.index]["url_field"],
+            tab_manager.manager.tabs[tab_manager.manager.index]["go_btn"],
+        ],
+    )
+    orig_select_tab = tab_manager.select_tab
+    def _select_tab_and_update_url(i):
+        orig_select_tab(i)
+        tab = tab_manager.manager.tabs[i]
+        url_bar.controls.clear()
+        url_bar.controls.extend([tab["url_field"], tab["go_btn"]])
+        page.update()
+    tab_manager.select_tab = _select_tab_and_update_url
+    def _update_content_width(e=None):
+        # Use page.width for current content width
+        width = page.width - (page.padding * 2)
+        if width < 0:
+            width = 0
+        tab_manager.content_container.width = width
+    _update_content_width()
+    page.on_resized = lambda e: (_update_content_width(), page.update())
     main_area = ft.Column(
         expand=True,
         controls=[
             tab_manager.tab_bar,
+            url_bar,
             tab_manager.content_container,
         ],
     )

@@ -14,7 +14,8 @@ class TabsManager:
         self.manager = SimpleNamespace(tabs=[], index=0)
         # UI components
         self.tab_bar = ft.Row(spacing=4)
-        self.content_container = ft.Container(expand=True)
+        # Add padding inside content area to avoid text touching the border
+        self.content_container = ft.Container(expand=True, bgcolor=ft.Colors.BLACK, padding=ft.padding.all(10))
 
         # Initialize with default "Home" tab only, using selected renderer
         default_content = render_micron("Welcome to Ren Browser") if app_module.RENDERER == "micron" else render_plaintext("Welcome to Ren Browser")
@@ -32,12 +33,11 @@ class TabsManager:
         # Create per-tab URL bar and GO button
         url_field = ft.TextField(label="URL", value=title, expand=True)
         go_btn = ft.IconButton(ft.Icons.OPEN_IN_BROWSER, tooltip="Load URL", on_click=lambda e, i=idx: self._on_tab_go(e, i))
-        # Wrap the content in a Column: URL bar + initial content
+        # Wrap the content in a Column: initial content only (URL bar is handled externally)
         content_control = content
         tab_content = ft.Column(
             expand=True,
             controls=[
-                ft.Row([url_field, go_btn]),
                 content_control,
             ],
         )
@@ -45,6 +45,7 @@ class TabsManager:
         self.manager.tabs.append({
             "title": title,
             "url_field": url_field,
+            "go_btn": go_btn,
             "content_control": content_control,
             "content": tab_content,
         })
@@ -110,7 +111,8 @@ class TabsManager:
         import ren_browser.app as app_module
         new_control = render_micron(placeholder_text) if app_module.RENDERER == "micron" else render_plaintext(placeholder_text)
         tab["content_control"] = new_control
-        tab["content"].controls[1] = new_control
+        # Replace the content control in the tab's Column
+        tab["content"].controls[0] = new_control
         # Refresh the displayed content if this tab is active
         if self.manager.index == idx:
             self.content_container.content = tab["content"]
