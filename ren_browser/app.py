@@ -12,11 +12,14 @@ import RNS
 RENDERER = "plaintext"
 
 async def main(page: Page):
-    loader = ft.Column(
-        [ft.ProgressRing(), ft.Text("Initializing reticulum network")],
-        alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    loader = ft.Container(
         expand=True,
+        alignment=ft.alignment.center,
+        content=ft.Column(
+            [ft.ProgressRing(), ft.Text("Initializing reticulum network")],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
     )
     page.add(loader)
     page.update()
