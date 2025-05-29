@@ -10,8 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "flet (>=0.28.3,<0.29.0)",
-    "rns (>=0.9.6,<0.10.0)",
-    "pydantic (>=2.11.5,<3.0.0)"
+    "rns (>=0.9.6,<0.10.0)"
 ]
 
 [build-system]
