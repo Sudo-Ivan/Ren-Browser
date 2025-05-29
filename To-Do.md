@@ -32,3 +32,10 @@
 - [ ] Page refreshing.
 - [ ] Interface status page.
 - [ ] Plugins. 
+
+
+## Distribution
+
+- [ ] Add Docker images to build Windows, Linux, MacOS, Android, iOS.
+- [ ] Appimage
+- [ ] Flatpak
