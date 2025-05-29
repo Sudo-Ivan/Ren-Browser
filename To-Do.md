@@ -13,6 +13,10 @@
 - [ ] Better tab display and management.
 - [ ] For smaller screens make url font smaller and tabs scrollable.
 
+## Design
+
+- [ ] Logo
+
 ## Renderers
 
 - [ ] Add a micron renderer/parser. (micron.py)
