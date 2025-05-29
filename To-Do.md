@@ -6,11 +6,9 @@
 - [ ] Tab previews.
 - [ ] Search with history.
 - [ ] Bookmark page and icon.
-- [ ] Scroll for tabs.
-- [ ] Interfaces page.
+- [ ] Interfaces status page.
 - [ ] Custom theming. 
 - [ ] Better tab display and management.
-- [ ] For smaller screens make url font smaller and tabs scrollable.
 
 ## Design
 
@@ -26,7 +24,7 @@
    - [ ] Add a bookmarks manager.
    - [ ] Add a history manager.
    - [ ] Add a cache manager.
-   - [ ] Add a download manager. (Windows, Linux, MacOS, Android, iOS)
+   - [ ] Add a download manager.
 
 ## Main Logic
 
