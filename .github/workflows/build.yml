@@ -31,7 +31,7 @@ jobs:
         run: poetry run flet build linux
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ren-browser-linux
           path: build/linux
@@ -60,7 +60,7 @@ jobs:
         run: poetry run flet build android
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ren-browser-apk
           path: build/android/output 
