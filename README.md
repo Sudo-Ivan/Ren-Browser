@@ -6,7 +6,7 @@ Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
 
 Built using [Flet](https://flet.dev/).
 
-Currently, you can find `Linux` and `Android` builds in action artifacts in the [GitHub Actions](https://github.com/Sudo-Ivan/ren-browser/actions) page, click on the latest workflow run. More platforms will be added in the future.
+Currently, you can find `Linux` and `Android` builds in action artifacts in the [GitHub Actions](https://github.com/Sudo-Ivan/Ren-Browser/actions/workflows/build.yml) page, click on the latest workflow run. More platforms will be added in the future.
 
 ## Renderers
 
