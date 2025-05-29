@@ -1,6 +1,8 @@
 # Ren Browser
 
-A browser for the Reticulum Network. Work-in-progress.
+A browser for the [Reticulum Network](https://reticulum.network/). Work-in-progress.
+
+Built using [Flet](https://flet.dev/).
 
 ## Development
 
