@@ -28,7 +28,6 @@ class PageFetcher:
         RNS.log(f"PageFetcher: starting fetch of {req.page_path} from {req.destination_hash}")
         """
         Download page content for the given PageRequest.
-        Placeholder implementation: replace with real network logic.
         """
         dest_bytes = bytes.fromhex(req.destination_hash)
         if not RNS.Transport.has_path(dest_bytes):
