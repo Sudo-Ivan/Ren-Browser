@@ -37,5 +37,6 @@
 ## Distribution
 
 - [ ] Add Docker images to build Windows, Linux, MacOS, Android, iOS.
+- [ ] Add/Update build workflow to build Windows, MacOS and iOS. 
 - [ ] Appimage
 - [ ] Flatpak
