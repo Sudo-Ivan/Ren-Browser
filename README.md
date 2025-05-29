@@ -56,7 +56,7 @@ poetry run ren-browser-ios-dev
 
 ```bash
 docker build -t ren-browser .
-docker run -p 8550:8550 ren-browser
+docker run -p 8550:8550 -v ./config:/app/config ren-browser
 ```
 
 ## Building
