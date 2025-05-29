@@ -2,10 +2,11 @@ import threading
 import time
 
 import RNS
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class PageRequest(BaseModel):
+@dataclass
+class PageRequest:
     destination_hash: str
     page_path: str
     field_data: dict | None = None
