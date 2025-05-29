@@ -6,6 +6,11 @@ Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
 
 Built using [Flet](https://flet.dev/).
 
+## Renderers
+
+- Micron (default) (WIP)
+- Plaintext (fallback and .mu source viewer)
+
 ## Development
 
 **Requirements**
@@ -13,6 +18,7 @@ Built using [Flet](https://flet.dev/).
 - Python 3.13+
 - Flet
 - Reticulum 0.9.6+
+- Poetry
 
 **Setup**
 
