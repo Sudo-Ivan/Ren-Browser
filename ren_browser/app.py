@@ -1,8 +1,10 @@
-import flet as ft
-from flet import Page, AppView
 import argparse
 import subprocess
 import sys
+
+import flet as ft
+from flet import AppView, Page
+
 from ren_browser.ui.ui import build_ui
 
 # Current renderer name

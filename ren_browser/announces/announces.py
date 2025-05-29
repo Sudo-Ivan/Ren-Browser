@@ -1,12 +1,13 @@
-import RNS
 import time
 from dataclasses import dataclass
-from typing import Optional, List
+
+import RNS
+
 
 @dataclass
 class Announce:
     destination_hash: str
-    display_name: Optional[str]
+    display_name: str | None
     timestamp: int
 
 class AnnounceService:
@@ -14,11 +15,12 @@ class AnnounceService:
     Service to listen for Reticulum announces and collect them.
     Calls update_callback whenever a new announce is received.
     """
+
     def __init__(self, update_callback):
         # Accept all announce aspects
         self.aspect_filter = "nomadnetwork.node"
         self.receive_path_responses = True
-        self.announces: List[Announce] = []
+        self.announces: list[Announce] = []
         self.update_callback = update_callback
         # Initialize Reticulum transport once
         try:
@@ -48,6 +50,6 @@ class AnnounceService:
         if self.update_callback:
             self.update_callback(self.announces)
 
-    def get_announces(self) -> List[Announce]:
+    def get_announces(self) -> list[Announce]:
         """Return collected announces."""
         return self.announces

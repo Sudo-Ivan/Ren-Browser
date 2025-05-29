@@ -1,7 +1,10 @@
-import flet as ft
 from types import SimpleNamespace
-from ren_browser.renderer.plaintext.plaintext import render_plaintext
+
+import flet as ft
+
 from ren_browser.renderer.micron.micron import render_micron
+from ren_browser.renderer.plaintext.plaintext import render_plaintext
+
 
 class TabsManager:
     def __init__(self, page: ft.Page):

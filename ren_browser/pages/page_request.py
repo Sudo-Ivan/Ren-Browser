@@ -1,17 +1,20 @@
-from typing import Optional, Dict
-from pydantic import BaseModel
-import os, time, threading
+import threading
+import time
+
 import RNS
+from pydantic import BaseModel
+
 
 class PageRequest(BaseModel):
     destination_hash: str
     page_path: str
-    field_data: Optional[Dict] = None
+    field_data: dict | None = None
 
 class PageFetcher:
     """
     Fetcher to download pages from the Reticulum network.
     """
+
     def __init__(self):
         # Initialize Reticulum with default config (singleton)
         try:

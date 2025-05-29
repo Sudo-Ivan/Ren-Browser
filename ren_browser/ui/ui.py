@@ -1,10 +1,12 @@
 import flet as ft
 from flet import Page
-from ren_browser.tabs.tabs import TabsManager
-from ren_browser.renderer.plaintext.plaintext import render_plaintext
-from ren_browser.renderer.micron.micron import render_micron
+
 from ren_browser.announces.announces import AnnounceService
+from ren_browser.controls.shortcuts import Shortcuts
 from ren_browser.pages.page_request import PageFetcher, PageRequest
+from ren_browser.renderer.micron.micron import render_micron
+from ren_browser.renderer.plaintext.plaintext import render_plaintext
+from ren_browser.tabs.tabs import TabsManager
 
 
 def build_ui(page: Page):
@@ -45,7 +47,11 @@ def build_ui(page: Page):
                         result = page_fetcher.fetch_page(req)
                     except Exception as ex:
                         result = f"Error: {ex}"
-                    tab = tab_manager.manager.tabs[idx]
+                    # Skip update if tab has been closed or index out of range
+                    try:
+                        tab = tab_manager.manager.tabs[idx]
+                    except IndexError:
+                        return
                     # Use micron renderer for .mu pages, fallback to plaintext
                     if req.page_path.endswith(".mu"):
                         new_control = render_micron(result)
@@ -78,6 +84,7 @@ def build_ui(page: Page):
 
     # Dynamic tabs manager for pages
     tab_manager = TabsManager(page)
+    Shortcuts(page, tab_manager)
     # Main area: tab bar and content
     main_area = ft.Column(
         expand=True,
