@@ -13,7 +13,6 @@ def build_ui(page: Page):
     import ren_browser.app as app_module
     page.theme_mode = ft.ThemeMode.DARK
     page.appbar = ft.AppBar()
-    page.padding = 20
     page.window.maximized = True
 
     page_fetcher = PageFetcher()
@@ -79,16 +78,8 @@ def build_ui(page: Page):
             tab_manager.manager.tabs[tab_manager.manager.index]["url_field"],
             tab_manager.manager.tabs[tab_manager.manager.index]["go_btn"],
         ],
-        expand=True,
-        spacing=4,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
     )
-    page.appbar.title = ft.Container(
-        content=url_bar,
-        padding=ft.padding.only(top=3),
-        expand=True,
-        alignment=ft.alignment.center_left,
-    )
+    page.appbar.title = url_bar
     orig_select_tab = tab_manager.select_tab
     def _select_tab_and_update_url(i):
         orig_select_tab(i)
@@ -97,6 +88,10 @@ def build_ui(page: Page):
         url_bar.controls.extend([tab["url_field"], tab["go_btn"]])
         page.update()
     tab_manager.select_tab = _select_tab_and_update_url
+    def _update_content_width(e=None):
+        tab_manager.content_container.width = page.width
+    _update_content_width()
+    page.on_resized = lambda e: (_update_content_width(), page.update())
     main_area = ft.Column(
         expand=True,
         controls=[tab_manager.tab_bar, tab_manager.content_container],
@@ -107,6 +102,11 @@ def build_ui(page: Page):
     page.add(
         ft.Column(
             expand=True,
-            controls=[layout],
+            controls=[
+                layout,
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.END,
+                ),
+            ],
         ),
     )

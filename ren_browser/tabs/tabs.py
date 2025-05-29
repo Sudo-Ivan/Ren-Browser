@@ -12,7 +12,7 @@ class TabsManager:
         self.page = page
         self.manager = SimpleNamespace(tabs=[], index=0)
         self.tab_bar = ft.Row(spacing=4)
-        self.content_container = ft.Container(expand=True, bgcolor=ft.Colors.BLACK, padding=ft.padding.all(10))
+        self.content_container = ft.Container(expand=True, bgcolor=ft.Colors.BLACK, padding=ft.padding.all(5))
 
         default_content = render_micron("Welcome to Ren Browser") if app_module.RENDERER == "micron" else render_plaintext("Welcome to Ren Browser")
         self._add_tab_internal("Home", default_content)
@@ -23,7 +23,12 @@ class TabsManager:
 
     def _add_tab_internal(self, title: str, content: ft.Control):
         idx = len(self.manager.tabs)
-        url_field = ft.TextField(label="URL", value=title, expand=True, text_style=ft.TextStyle(size=12))
+        url_field = ft.TextField(
+            value=title, 
+            expand=True, 
+            text_style=ft.TextStyle(size=12),
+            content_padding=ft.padding.only(top=8, bottom=8, left=8, right=8)
+        )
         go_btn = ft.IconButton(ft.Icons.OPEN_IN_BROWSER, tooltip="Load URL", on_click=lambda e, i=idx: self._on_tab_go(e, i))
         content_control = content
         tab_content = ft.Column(
