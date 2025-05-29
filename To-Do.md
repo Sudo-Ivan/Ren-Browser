@@ -2,7 +2,6 @@
 
 ## UI
 
-- [ ] Settings page and button icon.
 - [ ] Tab dragging/reordering.
 - [ ] Tab previews.
 - [ ] Search with history.
@@ -32,7 +31,6 @@
 ## Main Logic
 
 - [ ] Add a profiler to the browser. (profiler.py)
-- [ ] Add a settings page.(settings.py)
 - [ ] Page refreshing.
 - [ ] Interface status page.
 - [ ] Plugins. 
