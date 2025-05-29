@@ -2,6 +2,8 @@
 
 A browser for the [Reticulum Network](https://reticulum.network/). Work-in-progress.
 
+Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
+
 Built using [Flet](https://flet.dev/).
 
 ## Development
@@ -50,3 +52,6 @@ poetry run ren-browser-ios-dev
 docker build -t ren-browser .
 docker run -p 8550:8550 ren-browser
 ```
+
+## Building
+
