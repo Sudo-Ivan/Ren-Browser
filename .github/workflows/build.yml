@@ -57,7 +57,7 @@ jobs:
           poetry install --without dev
 
       - name: Build Android APK
-        run: poetry run flet build android
+        run: poetry run flet build apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
