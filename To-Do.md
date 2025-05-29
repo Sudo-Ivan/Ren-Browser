@@ -7,6 +7,11 @@
 - [ ] Tab previews.
 - [ ] Search with history.
 - [ ] Bookmark page and icon.
+- [ ] Scroll for tabs.
+- [ ] Interfaces page.
+- [ ] Custom theming. 
+- [ ] Better tab display and management.
+- [ ] For smaller screens make url font smaller and tabs scrollable.
 
 ## Renderers
 
@@ -16,7 +21,6 @@
 
 - [ ] Add a storage system/management, eg handling downloading files, saving bookmarks, caching, tabs and history. (storage.py)
    - [ ] Add a bookmarks manager.
-   - [ ] Add a tabs manager.
    - [ ] Add a history manager.
    - [ ] Add a cache manager.
    - [ ] Add a download manager. (Windows, Linux, MacOS, Android, iOS)
@@ -25,3 +29,6 @@
 
 - [ ] Add a profiler to the browser. (profiler.py)
 - [ ] Add a settings page.(settings.py)
+- [ ] Page refreshing.
+- [ ] Interface status page.
+- [ ] Plugins. 
