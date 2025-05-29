@@ -58,6 +58,11 @@ docker run -p 8550:8550 ren-browser
 ### Linux
 
 ```bash
-poetry run poetry run flet build linux
+poetry run flet build linux
 ```
 
+### Android
+
+```bash
+poetry run flet build android
+```
