@@ -5,7 +5,7 @@ RUN apk add --no-cache gcc musl-dev libffi-dev openssl-dev
 
 # Upgrade pip and install application dependencies
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir "flet>=0.28.3,<0.29.0" "rns>=0.9.6,<0.10.0" "pydantic>=2.11.5,<3.0.0"
+    && pip install --no-cache-dir "flet>=0.28.3,<0.29.0" "rns>=0.9.6,<0.10.0"
 
 # Copy application source
 WORKDIR /app
