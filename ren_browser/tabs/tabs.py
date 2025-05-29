@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import flet as ft
 
-from ren_browser.renderer.micron.micron import render_micron
-from ren_browser.renderer.plaintext.plaintext import render_plaintext
+from ren_browser.renderer.micron import render_micron
+from ren_browser.renderer.plaintext import render_plaintext
 
 
 class TabsManager:

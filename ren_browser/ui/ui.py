@@ -4,8 +4,8 @@ from flet import Page
 from ren_browser.announces.announces import AnnounceService
 from ren_browser.controls.shortcuts import Shortcuts
 from ren_browser.pages.page_request import PageFetcher, PageRequest
-from ren_browser.renderer.micron.micron import render_micron
-from ren_browser.renderer.plaintext.plaintext import render_plaintext
+from ren_browser.renderer.micron import render_micron
+from ren_browser.renderer.plaintext import render_plaintext
 from ren_browser.tabs.tabs import TabsManager
 
 
