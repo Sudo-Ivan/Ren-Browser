@@ -1,5 +1,8 @@
 # Ren Browser
 
+![Build and Publish Docker Image](https://github.com/Sudo-Ivan/Ren-Browser/actions/workflows/docker.yml/badge.svg)
+![Build APK and Linux](https://github.com/Sudo-Ivan/Ren-Browser/actions/workflows/build.yml/badge.svg)
+
 A browser for the [Reticulum Network](https://reticulum.network/). Work-in-progress.
 
 Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
