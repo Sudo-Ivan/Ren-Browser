@@ -3,7 +3,7 @@ import pathlib
 from ren_browser.logs import ERROR_LOGS, RET_LOGS
 
 def open_settings_tab(page: ft.Page, tab_manager):
-    config_path = pathlib.Path(__file__).resolve().parents[2] / "config" / "config"
+    config_path = pathlib.Path(__file__).resolve().parents[2] / "config" / "config" / "config"
     try:
         config_text = config_path.read_text()
     except Exception as ex:
