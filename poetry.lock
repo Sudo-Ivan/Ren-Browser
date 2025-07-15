@@ -199,28 +199,6 @@ desktop = ["flet-desktop (==0.28.3) ; platform_system == \"Darwin\" or platform_
 web = ["flet-web (==0.28.3)"]
 
 [[package]]
-name = "flet-desktop"
-version = "0.28.3"
-description = "Flet Desktop client in Flutter"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "flet_desktop-0.28.3-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:6763b8e14863b0ee93e310720efa02202acae6d6ce8ff783663380f350f4f382"},
-    {file = "flet_desktop-0.28.3-py3-none-macosx_12_0_arm64.whl", hash = "sha256:89797a387e743808733f308c7faa1158ab768966180c0fc4207f3e95d3b25db3"},
-    {file = "flet_desktop-0.28.3-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:178f026f5c11555f06639ef96920b8f2e51281467543f7449f092a67878451d5"},
-    {file = "flet_desktop-0.28.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:539b33a0412e9ee17dccdf5f6ded99c48f1c390d6c8bb038b54e301833e56d0c"},
-    {file = "flet_desktop-0.28.3-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:99715d68ba0001ff0d17f5aa0d937a39d9eaa57ba93e6bbb206f0c17f0b0911e"},
-    {file = "flet_desktop-0.28.3-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:6825a5a6d3e513526692475c14c790ea6874f4aec0132710fd5b9a1c9b4499bf"},
-    {file = "flet_desktop-0.28.3-py3-none-win32.whl", hash = "sha256:dc24f57ba725b974b4795b46e35f2b5348c4843f5117e9fc18b25c4abfa5caf4"},
-    {file = "flet_desktop-0.28.3-py3-none-win_amd64.whl", hash = "sha256:35db313302fd4c376ba9be4d43f953a5c67d1ba99180dc6afee702699ed14749"},
-    {file = "flet_desktop-0.28.3.tar.gz", hash = "sha256:3e5db7b152de8cd3935e98eb39c162bf5c66f595d30c006f28d48d60e77a463d"},
-]
-
-[package.dependencies]
-flet = "0.28.3"
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -431,4 +409,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "e6c21e6ee6a73e8d278ab844d25d3d89e2fc50becd0e1aead8d55574470a75cf"
+content-hash = "5630ab2a6542cf65d80bc8366b278ee2aa9791f872d82bae9bfd7d28ba3b249c"
