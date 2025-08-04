@@ -20,7 +20,7 @@ Built using [Flet](https://flet.dev/).
 
 - Python 3.13+
 - Flet
-- Reticulum 0.9.6+
+- Reticulum 1.0.0
 - Poetry
 
 **Setup**
