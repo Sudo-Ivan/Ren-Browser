@@ -1,6 +1,6 @@
+import pathlib
 import time
 from dataclasses import dataclass
-import pathlib
 
 import RNS
 
@@ -12,8 +12,7 @@ class Announce:
     timestamp: int
 
 class AnnounceService:
-    """
-    Service to listen for Reticulum announces and collect them.
+    """Service to listen for Reticulum announces and collect them.
     Calls update_callback whenever a new announce is received.
     """
 

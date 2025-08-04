@@ -24,10 +24,10 @@ class TabsManager:
     def _add_tab_internal(self, title: str, content: ft.Control):
         idx = len(self.manager.tabs)
         url_field = ft.TextField(
-            value=title, 
-            expand=True, 
+            value=title,
+            expand=True,
             text_style=ft.TextStyle(size=12),
-            content_padding=ft.padding.only(top=8, bottom=8, left=8, right=8)
+            content_padding=ft.padding.only(top=8, bottom=8, left=8, right=8),
         )
         go_btn = ft.IconButton(ft.Icons.OPEN_IN_BROWSER, tooltip="Load URL", on_click=lambda e, i=idx: self._on_tab_go(e, i))
         content_control = content

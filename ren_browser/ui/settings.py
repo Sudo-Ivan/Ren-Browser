@@ -1,6 +1,9 @@
-import flet as ft
 import pathlib
+
+import flet as ft
+
 from ren_browser.logs import ERROR_LOGS, RET_LOGS
+
 
 def open_settings_tab(page: ft.Page, tab_manager):
     config_path = pathlib.Path(__file__).resolve().parents[2] / "config" / "config"

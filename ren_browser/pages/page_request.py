@@ -1,9 +1,9 @@
+import pathlib
 import threading
 import time
-import pathlib
+from dataclasses import dataclass
 
 import RNS
-from dataclasses import dataclass
 
 
 @dataclass
@@ -13,8 +13,7 @@ class PageRequest:
     field_data: dict | None = None
 
 class PageFetcher:
-    """
-    Fetcher to download pages from the Reticulum network.
+    """Fetcher to download pages from the Reticulum network.
     """
 
     def __init__(self):
@@ -39,34 +38,34 @@ class PageFetcher:
                 time.sleep(0.1)
         identity = RNS.Identity.recall(dest_bytes)
         if not identity:
-            raise Exception('Identity not found')
+            raise Exception("Identity not found")
         destination = RNS.Destination(
             identity,
             RNS.Destination.OUT,
             RNS.Destination.SINGLE,
-            'nomadnetwork',
-            'node',
+            "nomadnetwork",
+            "node",
         )
         link = RNS.Link(destination)
 
-        result = {'data': None}
+        result = {"data": None}
         ev = threading.Event()
 
         def on_response(receipt):
             data = receipt.response
             if isinstance(data, bytes):
-                result['data'] = data.decode('utf-8')
+                result["data"] = data.decode("utf-8")
             else:
-                result['data'] = str(data)
+                result["data"] = str(data)
             ev.set()
 
         def on_failed(_):
             ev.set()
 
         link.set_link_established_callback(
-            lambda l: l.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed)
+            lambda l: l.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed),
         )
         ev.wait(timeout=15)
-        data_str = result['data'] or 'No content received'
+        data_str = result["data"] or "No content received"
         RNS.log(f"PageFetcher: received data for {req.destination_hash}:{req.page_path}")
         return data_str

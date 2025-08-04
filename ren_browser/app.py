@@ -1,13 +1,13 @@
 import argparse
+import pathlib
 import subprocess
 import sys
-import pathlib
 
 import flet as ft
+import RNS
 from flet import AppView, Page
 
 from ren_browser.ui.ui import build_ui
-import RNS
 
 RENDERER = "plaintext"
 
