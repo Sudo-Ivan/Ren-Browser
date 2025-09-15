@@ -63,7 +63,7 @@ class PageFetcher:
             ev.set()
 
         link.set_link_established_callback(
-            lambda l: l.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed),
+            lambda link_obj: link_obj.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed),
         )
         ev.wait(timeout=15)
         data_str = result["data"] or "No content received"
