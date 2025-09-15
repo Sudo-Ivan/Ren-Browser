@@ -36,7 +36,7 @@ class AnnounceService:
         if app_data:
             try:
                 display_name = app_data.decode("utf-8")
-            except:
+            except (UnicodeDecodeError, AttributeError):
                 pass
         announce = Announce(destination_hash.hex(), display_name, ts)
         self.announces = [ann for ann in self.announces if ann.destination_hash != announce.destination_hash]
