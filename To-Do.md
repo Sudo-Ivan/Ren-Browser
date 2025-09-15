@@ -1,5 +1,9 @@
 # To-Do
 
+## Bugs
+
+- [ ] Android background app malfunction - app crashes with black screen when returning from background ([#1](https://github.com/Sudo-Ivan/Ren-Browser/issues/1))
+
 ## UI
 
 - [ ] Tab dragging/reordering.
@@ -32,7 +36,6 @@
 - [ ] Page refreshing.
 - [ ] Interface status page.
 - [ ] Plugins. 
-
 
 ## Distribution
 
