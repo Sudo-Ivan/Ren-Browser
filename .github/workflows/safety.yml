@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Run Safety CLI to check for vulnerabilities
         uses: pyupio/safety-action@7baf6605473beffc874c1313ddf2db085c0cacf2
         with:
