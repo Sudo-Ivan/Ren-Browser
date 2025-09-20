@@ -28,11 +28,9 @@ def log_ret(msg, *args, **kwargs):
 def setup_rns_logging():
     """Set up RNS log replacement. Call this after RNS.Reticulum initialization."""
     global _original_rns_log
-    _original_rns_log = RNS.log
-    RNS.log = log_ret
-
-# Initial setup
-setup_rns_logging()
+    if _original_rns_log != log_ret:  # Prevent recursion
+        _original_rns_log = RNS.log
+        RNS.log = log_ret
 
 def log_error(msg: str):
     """Log error messages to both error and application logs.

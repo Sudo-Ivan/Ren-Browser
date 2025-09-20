@@ -45,6 +45,8 @@ class StorageManager:
             # Desktop (Linux, Windows, macOS) - use home directory
             if "APPDATA" in os.environ:  # Windows
                 storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
+            elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard
+                storage_dir = pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
             else:
                 storage_dir = pathlib.Path.home() / ".ren_browser"
 
@@ -61,13 +63,20 @@ class StorageManager:
 
     def get_config_path(self) -> pathlib.Path:
         """Get the path to the main configuration file."""
-        return self._storage_dir / "config.txt"
+        return self._storage_dir / "config"
 
     def get_reticulum_config_path(self) -> pathlib.Path:
         """Get the path to the Reticulum configuration directory."""
-        config_dir = self._storage_dir / "reticulum"
-        config_dir.mkdir(exist_ok=True)
-        return config_dir
+        # Check for global override from app
+        try:
+            from ren_browser.app import RNS_CONFIG_DIR
+            if RNS_CONFIG_DIR:
+                return pathlib.Path(RNS_CONFIG_DIR)
+        except ImportError:
+            pass
+        
+        # Default to standard RNS config directory
+        return pathlib.Path.home() / ".reticulum"
 
     def save_config(self, config_content: str) -> bool:
         """Save configuration content to file.
@@ -83,12 +92,14 @@ class StorageManager:
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set("ren_browser_config", config_content)
 
+            # Save to reticulum config directory for RNS to use
+            reticulum_config_path = self.get_reticulum_config_path() / "config"
+            reticulum_config_path.parent.mkdir(parents=True, exist_ok=True)
+            reticulum_config_path.write_text(config_content, encoding="utf-8")
+            
+            # Also save to local config path as backup
             config_path = self.get_config_path()
             config_path.write_text(config_content, encoding="utf-8")
-
-            # Also save to reticulum config directory for RNS to use
-            reticulum_config_path = self.get_reticulum_config_path() / "config"
-            reticulum_config_path.write_text(config_content, encoding="utf-8")
             return True
 
         except (OSError, PermissionError, UnicodeEncodeError) as e:
@@ -121,11 +132,9 @@ class StorageManager:
         """Load configuration content from storage.
 
         Returns:
-            Configuration text, or default config if not found
+            Configuration text, or empty string if not found
 
         """
-        default_config = """default config"""
-
         try:
             reticulum_config_path = self.get_reticulum_config_path() / "config"
             if reticulum_config_path.exists():
@@ -143,7 +152,7 @@ class StorageManager:
         except (OSError, PermissionError, UnicodeDecodeError):
             pass
 
-        return default_config
+        return ""
 
     def save_bookmarks(self, bookmarks: list) -> bool:
         """Save bookmarks to storage."""
@@ -261,6 +270,5 @@ def get_rns_config_directory() -> str:
     except ImportError:
         pass
 
-    # Fallback to default storage manager behavior
-    storage = get_storage_manager()
-    return str(storage.get_reticulum_config_path())
+    # Default to standard RNS config directory
+    return str(pathlib.Path.home() / ".reticulum")
