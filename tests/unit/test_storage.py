@@ -74,20 +74,16 @@ class TestStorageManager:
             storage._storage_dir = Path(temp_dir)
             
             config_path = storage.get_config_path()
-            expected_path = Path(temp_dir) / 'config.txt'
+            expected_path = Path(temp_dir) / 'config'
             assert config_path == expected_path
 
     def test_get_reticulum_config_path(self):
         """Test getting Reticulum config directory path."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            storage = StorageManager()
-            storage._storage_dir = Path(temp_dir)
-            
-            with patch('pathlib.Path.mkdir') as mock_mkdir:
-                config_path = storage.get_reticulum_config_path()
-                expected_path = Path(temp_dir) / 'reticulum'
-                assert config_path == expected_path
-                mock_mkdir.assert_called_once_with(exist_ok=True)
+        storage = StorageManager()
+        
+        config_path = storage.get_reticulum_config_path()
+        expected_path = Path.home() / '.reticulum'
+        assert config_path == expected_path
 
     def test_save_config_success(self):
         """Test successful config saving."""
@@ -158,9 +154,11 @@ class TestStorageManager:
             storage = StorageManager(mock_page)
             storage._storage_dir = Path(temp_dir)
             
-            loaded_config = storage.load_config()
-            assert loaded_config == "client storage config"
-            mock_page.client_storage.get.assert_called_with('ren_browser_config')
+            # Mock the reticulum config path to also be in temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                loaded_config = storage.load_config()
+                assert loaded_config == "client storage config"
+                mock_page.client_storage.get.assert_called_with('ren_browser_config')
 
     def test_load_config_default(self):
         """Test loading default config when no config exists."""
@@ -168,9 +166,10 @@ class TestStorageManager:
             storage = StorageManager()
             storage._storage_dir = Path(temp_dir)
             
-            loaded_config = storage.load_config()
-            assert "# Ren Browser Configuration" in loaded_config
-            assert "[reticulum]" in loaded_config
+            # Mock the reticulum config path to also be in temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                loaded_config = storage.load_config()
+                assert loaded_config == ""
 
     def test_save_bookmarks(self):
         """Test saving bookmarks."""
@@ -336,9 +335,11 @@ class TestStorageManagerEdgeCases:
             config_path = storage.get_config_path()
             config_path.write_bytes(b'\xff\xfe invalid utf-8')
             
-            # Should return default config
-            config = storage.load_config()
-            assert "# Ren Browser Configuration" in config
+            # Mock the reticulum config path to also be in temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                # Should return empty string when encoding fails
+                config = storage.load_config()
+                assert config == ""
 
     def test_is_writable_permission_denied(self):
         """Test _is_writable when permission is denied."""
