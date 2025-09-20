@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 import RNS
 
-from ren_browser.storage.storage import get_rns_config_directory
 
 
 @dataclass
@@ -28,13 +27,7 @@ class PageFetcher:
 
     def __init__(self):
         """Initialize the page fetcher and Reticulum connection."""
-        config_dir = get_rns_config_directory()
-        try:
-            RNS.Reticulum(str(config_dir))
-            from ren_browser.logs import setup_rns_logging
-            setup_rns_logging()
-        except (OSError, ValueError):
-            pass
+        # RNS should already be initialized by main app
 
     def fetch_page(self, req: PageRequest) -> str:
         """Download page content for the given PageRequest.

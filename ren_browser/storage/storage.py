@@ -74,7 +74,7 @@ class StorageManager:
                 return pathlib.Path(RNS_CONFIG_DIR)
         except ImportError:
             pass
-        
+
         # Default to standard RNS config directory
         return pathlib.Path.home() / ".reticulum"
 
@@ -96,7 +96,7 @@ class StorageManager:
             reticulum_config_path = self.get_reticulum_config_path() / "config"
             reticulum_config_path.parent.mkdir(parents=True, exist_ok=True)
             reticulum_config_path.write_text(config_content, encoding="utf-8")
-            
+
             # Also save to local config path as backup
             config_path = self.get_config_path()
             config_path.write_text(config_content, encoding="utf-8")

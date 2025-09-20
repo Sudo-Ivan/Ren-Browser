@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 import RNS
 
-from ren_browser.storage.storage import get_rns_config_directory
 
 
 @dataclass
@@ -39,13 +38,7 @@ class AnnounceService:
         self.receive_path_responses = True
         self.announces: list[Announce] = []
         self.update_callback = update_callback
-        config_dir = get_rns_config_directory()
-        try:
-            RNS.Reticulum(str(config_dir))
-            from ren_browser.logs import setup_rns_logging
-            setup_rns_logging()
-        except (OSError, ValueError):
-            pass
+        # RNS should already be initialized by main app
         RNS.Transport.register_announce_handler(self)
         RNS.log("AnnounceService: registered announce handler")
 

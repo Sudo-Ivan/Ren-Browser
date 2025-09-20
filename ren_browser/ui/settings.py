@@ -42,18 +42,16 @@ def open_settings_tab(page: ft.Page, tab_manager):
             page.snack_bar = ft.SnackBar(ft.Text(f"Error saving config: {ex}"), open=True)
         page.update()
     save_btn = ft.ElevatedButton("Save and Restart", on_click=on_save_config)
-    error_text = "\n".join(ERROR_LOGS) or "No errors logged."
     error_field = ft.TextField(
         label="Error Logs",
-        value=error_text,
+        value="",
         expand=True,
         multiline=True,
         read_only=True,
     )
-    ret_text = "\n".join(RET_LOGS) or "No Reticulum logs."
     ret_field = ft.TextField(
         label="Reticulum logs",
-        value=ret_text,
+        value="",
         expand=True,
         multiline=True,
         read_only=True,
@@ -75,19 +73,34 @@ def open_settings_tab(page: ft.Page, tab_manager):
         content_placeholder.content = config_field
         page.update()
     def show_errors(ev):
+        error_field.value = "\n".join(ERROR_LOGS) or "No errors logged."
         content_placeholder.content = error_field
         page.update()
     def show_ret_logs(ev):
+        ret_field.value = "\n".join(RET_LOGS) or "No Reticulum logs."
         content_placeholder.content = ret_field
         page.update()
     def show_storage_info(ev):
+        storage_info = storage.get_storage_info()
+        storage_field.value = "\n".join([f"{key}: {value}" for key, value in storage_info.items()])
         content_placeholder.content = storage_field
         page.update()
+    def refresh_current_view(ev):
+        # Refresh the currently displayed content
+        if content_placeholder.content == error_field:
+            show_errors(ev)
+        elif content_placeholder.content == ret_field:
+            show_ret_logs(ev)
+        elif content_placeholder.content == storage_field:
+            show_storage_info(ev)
+        elif content_placeholder.content == config_field:
+            show_config(ev)
     btn_config = ft.ElevatedButton("Config", on_click=show_config)
     btn_errors = ft.ElevatedButton("Errors", on_click=show_errors)
     btn_ret = ft.ElevatedButton("Ret Logs", on_click=show_ret_logs)
     btn_storage = ft.ElevatedButton("Storage", on_click=show_storage_info)
-    button_row = ft.Row(controls=[btn_config, btn_errors, btn_ret, btn_storage])
+    btn_refresh = ft.ElevatedButton("Refresh", on_click=refresh_current_view)
+    button_row = ft.Row(controls=[btn_config, btn_errors, btn_ret, btn_storage, btn_refresh])
     content_placeholder.content = config_field
     settings_content = ft.Column(
         expand=True,

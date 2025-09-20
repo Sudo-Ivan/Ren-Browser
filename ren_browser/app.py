@@ -43,9 +43,10 @@ async def main(page: Page):
         else:
             config_dir = storage.get_reticulum_config_path()
         try:
-            RNS.Reticulum(str(config_dir))
+            # Set up logging capture first, before RNS init
             import ren_browser.logs
             ren_browser.logs.setup_rns_logging()
+            RNS.Reticulum(str(config_dir))
         except (OSError, ValueError):
             pass
         page.controls.clear()
