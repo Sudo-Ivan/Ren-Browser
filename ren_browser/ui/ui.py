@@ -1,3 +1,8 @@
+"""Main UI construction for Ren Browser.
+
+Builds the complete browser interface including tabs, navigation,
+announce handling, and content rendering.
+"""
 import flet as ft
 from flet import Page
 
@@ -10,6 +15,12 @@ from ren_browser.tabs.tabs import TabsManager
 
 
 def build_ui(page: Page):
+    """Build and configure the main browser UI.
+
+    Args:
+        page: Flet page instance to build UI on.
+
+    """
     page.theme_mode = ft.ThemeMode.DARK
     page.appbar = ft.AppBar()
     page.window.maximized = True
@@ -65,7 +76,7 @@ def build_ui(page: Page):
     page.appbar.leading = ft.IconButton(
         ft.Icons.MENU,
         tooltip="Toggle sidebar",
-        on_click=lambda e: (setattr(page.drawer, 'open', not page.drawer.open), page.update()),
+        on_click=lambda e: (setattr(page.drawer, "open", not page.drawer.open), page.update()),
     )
 
     tab_manager = TabsManager(page)
