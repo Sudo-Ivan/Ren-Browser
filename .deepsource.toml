@@ -1,5 +1,9 @@
 version = 1
 
+exclude_patterns = [
+  "tests/**"
+]
+
 [[analyzers]]
 name = "python"
 
@@ -8,6 +12,3 @@ name = "python"
 
 [[analyzers]]
 name = "docker"
-
-[exclude_patterns]
-paths = ["tests/**"]
