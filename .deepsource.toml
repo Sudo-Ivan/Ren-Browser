@@ -8,3 +8,6 @@ name = "python"
 
 [[analyzers]]
 name = "docker"
+
+[exclude_patterns]
+paths = ["tests/**"]
