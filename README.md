@@ -19,7 +19,7 @@ Currently, you can find `Linux` and `Android` builds in action artifacts in the 
 
 - Python 3.13+
 - Flet
-- Reticulum 0.9.6+
+- Reticulum 1.0.0+
 - Poetry
 
 **Setup**
