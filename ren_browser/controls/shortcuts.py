@@ -1,14 +1,36 @@
+"""Keyboard shortcuts handling for Ren Browser.
+
+Provides keyboard event handling and delegation to tab manager
+and UI components.
+"""
 import flet as ft
 
 
 class Shortcuts:
+    """Handles keyboard shortcuts for the Ren Browser.
+
+    Provides shortcuts for tab management, navigation, and UI actions.
+    """
+
     def __init__(self, page: ft.Page, tab_manager):
-        """Attach keyboard event handler to page and delegate actions to tab_manager and UI."""
+        """Initialize shortcuts handler.
+
+        Args:
+            page: Flet page instance to attach keyboard events to.
+            tab_manager: Tab manager instance for tab-related actions.
+
+        """
         self.page = page
         self.tab_manager = tab_manager
         page.on_keyboard_event = self.on_keyboard
 
     def on_keyboard(self, e: ft.KeyboardEvent):
+        """Handle keyboard events and execute corresponding actions.
+
+        Args:
+            e: Keyboard event from Flet.
+
+        """
         # Support Ctrl (and Meta on macOS)
         ctrl = e.ctrl or e.meta
         if not ctrl:
