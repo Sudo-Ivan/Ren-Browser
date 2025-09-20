@@ -1,13 +1,11 @@
 import argparse
-import subprocess
-import sys
 import pathlib
 
 import flet as ft
+import RNS
 from flet import AppView, Page
 
 from ren_browser.ui.ui import build_ui
-import RNS
 
 RENDERER = "plaintext"
 
@@ -57,45 +55,29 @@ if __name__ == "__main__":
     run()
 
 def web():
-    """Launch Ren Browser in web mode via Flet CLI."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", str(script_path), "--web"])
-    sys.exit(rc)
+    """Launch Ren Browser in web mode."""
+    ft.app(main, view=AppView.WEB_BROWSER)
 
 def android():
-    """Launch Ren Browser in Android mode via Flet CLI."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", str(script_path), "--android"])
-    sys.exit(rc)
+    """Launch Ren Browser in Android mode."""
+    ft.app(main, view=AppView.FLET_APP_WEB)
 
 def ios():
-    """Launch Ren Browser in iOS mode via Flet CLI."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", str(script_path), "--ios"])
-    sys.exit(rc)
-
-# Hot reload (dev) mode entrypoints
+    """Launch Ren Browser in iOS mode."""
+    ft.app(main, view=AppView.FLET_APP_WEB)
 
 def run_dev():
-    """Launch Ren Browser in desktop mode via Flet CLI with hot reload."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", "-d", "-r", str(script_path)])
-    sys.exit(rc)
+    """Launch Ren Browser in desktop mode."""
+    ft.app(main)
 
 def web_dev():
-    """Launch Ren Browser in web mode via Flet CLI with hot reload."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", "--web", "-d", "-r", str(script_path)])
-    sys.exit(rc)
+    """Launch Ren Browser in web mode."""
+    ft.app(main, view=AppView.WEB_BROWSER)
 
 def android_dev():
-    """Launch Ren Browser in Android mode via Flet CLI with hot reload."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", "--android", "-d", "-r", str(script_path)])
-    sys.exit(rc)
+    """Launch Ren Browser in Android mode."""
+    ft.app(main, view=AppView.FLET_APP_WEB)
 
 def ios_dev():
-    """Launch Ren Browser in iOS mode via Flet CLI with hot reload."""
-    script_path = pathlib.Path(__file__).resolve()
-    rc = subprocess.call(["flet", "run", "--ios", "-d", "-r", str(script_path)])
-    sys.exit(rc)
+    """Launch Ren Browser in iOS mode."""
+    ft.app(main, view=AppView.FLET_APP_WEB)
