@@ -91,13 +91,15 @@ class TestStorageManager:
             storage = StorageManager()
             storage._storage_dir = Path(temp_dir)
             
-            config_content = "test config content"
-            result = storage.save_config(config_content)
-            
-            assert result is True
-            config_path = storage.get_config_path()
-            assert config_path.exists()
-            assert config_path.read_text(encoding='utf-8') == config_content
+            # Mock the reticulum config path to use temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                config_content = "test config content"
+                result = storage.save_config(config_content)
+                
+                assert result is True
+                config_path = storage.get_config_path()
+                assert config_path.exists()
+                assert config_path.read_text(encoding='utf-8') == config_content
 
     def test_save_config_with_client_storage(self):
         """Test config saving with client storage."""
@@ -108,27 +110,32 @@ class TestStorageManager:
             storage = StorageManager(mock_page)
             storage._storage_dir = Path(temp_dir)
             
-            config_content = "test config content"
-            result = storage.save_config(config_content)
-            
-            assert result is True
-            mock_page.client_storage.set.assert_called_with('ren_browser_config', config_content)
+            # Mock the reticulum config path to use temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                config_content = "test config content"
+                result = storage.save_config(config_content)
+                
+                assert result is True
+                mock_page.client_storage.set.assert_called_with('ren_browser_config', config_content)
 
     def test_save_config_fallback(self):
         """Test config saving fallback when file system fails."""
-        mock_page = Mock()
-        mock_page.client_storage.set = Mock()
-        
-        storage = StorageManager(mock_page)
-        
-        # Mock the storage directory to cause file system failure
-        with patch('pathlib.Path.write_text', side_effect=PermissionError("Access denied")):
-            config_content = "test config content"
-            result = storage.save_config(config_content)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mock_page = Mock()
+            mock_page.client_storage.set = Mock()
             
-            assert result is True
-            # Check that the config was set to client storage
-            mock_page.client_storage.set.assert_any_call('ren_browser_config', config_content)
+            storage = StorageManager(mock_page)
+            storage._storage_dir = Path(temp_dir)
+            
+            # Mock the reticulum config path to use temp dir and cause failure
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                with patch('pathlib.Path.write_text', side_effect=PermissionError("Access denied")):
+                    config_content = "test config content"
+                    result = storage.save_config(config_content)
+                    
+                    assert result is True
+                    # Check that the config was set to client storage
+                    mock_page.client_storage.set.assert_any_call('ren_browser_config', config_content)
             # Verify that client storage was called at least once
             assert mock_page.client_storage.set.call_count >= 1
 
@@ -138,12 +145,14 @@ class TestStorageManager:
             storage = StorageManager()
             storage._storage_dir = Path(temp_dir)
             
-            config_content = "test config content"
-            config_path = storage.get_config_path()
-            config_path.write_text(config_content, encoding='utf-8')
-            
-            loaded_config = storage.load_config()
-            assert loaded_config == config_content
+            # Mock the reticulum config path to use temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                config_content = "test config content"
+                config_path = storage.get_config_path()
+                config_path.write_text(config_content, encoding='utf-8')
+                
+                loaded_config = storage.load_config()
+                assert loaded_config == config_content
 
     def test_load_config_from_client_storage(self):
         """Test loading config from client storage when file doesn't exist."""
@@ -319,11 +328,13 @@ class TestStorageManagerEdgeCases:
             storage = StorageManager()
             storage._storage_dir = Path(temp_dir)
             
-            # Test with content that might cause encoding issues
-            with patch('pathlib.Path.write_text', side_effect=UnicodeEncodeError('utf-8', '', 0, 1, 'error')):
-                result = storage.save_config("test content")
-                # Should still succeed due to fallback
-                assert result is False
+            # Mock the reticulum config path to use temp dir
+            with patch.object(storage, 'get_reticulum_config_path', return_value=Path(temp_dir) / "reticulum"):
+                # Test with content that might cause encoding issues
+                with patch('pathlib.Path.write_text', side_effect=UnicodeEncodeError('utf-8', '', 0, 1, 'error')):
+                    result = storage.save_config("test content")
+                    # Should still succeed due to fallback
+                    assert result is False
 
     def test_load_config_encoding_error(self):
         """Test config loading with encoding errors."""
