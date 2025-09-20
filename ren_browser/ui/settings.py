@@ -1,26 +1,43 @@
-import pathlib
+"""Settings interface for Ren Browser.
 
+Provides configuration management, log viewing, and storage
+information display.
+"""
 import flet as ft
 
 from ren_browser.logs import ERROR_LOGS, RET_LOGS
+from ren_browser.storage.storage import get_storage_manager
 
 
 def open_settings_tab(page: ft.Page, tab_manager):
-    config_path = pathlib.Path(__file__).resolve().parents[2] / "config" / "config"
+    """Open a settings tab with configuration and debugging options.
+
+    Args:
+        page: Flet page instance for UI updates.
+        tab_manager: Tab manager to add the settings tab to.
+
+    """
+    storage = get_storage_manager(page)
+
     try:
-        config_text = config_path.read_text()
+        config_text = storage.load_config()
     except Exception as ex:
         config_text = f"Error reading config: {ex}"
+
     config_field = ft.TextField(
         label="Reticulum config",
         value=config_text,
         expand=True,
         multiline=True,
     )
+
     def on_save_config(ev):
         try:
-            config_path.write_text(config_field.value)
-            page.snack_bar = ft.SnackBar(ft.Text("Config saved. Please restart the app."), open=True)
+            success = storage.save_config(config_field.value)
+            if success:
+                page.snack_bar = ft.SnackBar(ft.Text("Config saved successfully. Please restart the app."), open=True)
+            else:
+                page.snack_bar = ft.SnackBar(ft.Text("Error saving config: Storage operation failed"), open=True)
         except Exception as ex:
             page.snack_bar = ft.SnackBar(ft.Text(f"Error saving config: {ex}"), open=True)
         page.update()
@@ -41,6 +58,18 @@ def open_settings_tab(page: ft.Page, tab_manager):
         multiline=True,
         read_only=True,
     )
+
+    # Storage information for debugging
+    storage_info = storage.get_storage_info()
+    storage_text = "\n".join([f"{key}: {value}" for key, value in storage_info.items()])
+    storage_field = ft.TextField(
+        label="Storage Information",
+        value=storage_text,
+        expand=True,
+        multiline=True,
+        read_only=True,
+    )
+
     content_placeholder = ft.Container(expand=True)
     def show_config(ev):
         content_placeholder.content = config_field
@@ -51,10 +80,14 @@ def open_settings_tab(page: ft.Page, tab_manager):
     def show_ret_logs(ev):
         content_placeholder.content = ret_field
         page.update()
+    def show_storage_info(ev):
+        content_placeholder.content = storage_field
+        page.update()
     btn_config = ft.ElevatedButton("Config", on_click=show_config)
     btn_errors = ft.ElevatedButton("Errors", on_click=show_errors)
     btn_ret = ft.ElevatedButton("Ret Logs", on_click=show_ret_logs)
-    button_row = ft.Row(controls=[btn_config, btn_errors, btn_ret])
+    btn_storage = ft.ElevatedButton("Storage", on_click=show_storage_info)
+    button_row = ft.Row(controls=[btn_config, btn_errors, btn_ret, btn_storage])
     content_placeholder.content = config_field
     settings_content = ft.Column(
         expand=True,
