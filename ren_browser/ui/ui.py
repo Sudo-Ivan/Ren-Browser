@@ -10,7 +10,6 @@ from ren_browser.tabs.tabs import TabsManager
 
 
 def build_ui(page: Page):
-    import ren_browser.app as app_module
     page.theme_mode = ft.ThemeMode.DARK
     page.appbar = ft.AppBar()
     page.window.maximized = True

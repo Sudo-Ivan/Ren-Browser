@@ -1,9 +1,9 @@
+import pathlib
 import threading
 import time
-import pathlib
+from dataclasses import dataclass
 
 import RNS
-from dataclasses import dataclass
 
 
 @dataclass
@@ -13,8 +13,7 @@ class PageRequest:
     field_data: dict | None = None
 
 class PageFetcher:
-    """
-    Fetcher to download pages from the Reticulum network.
+    """Fetcher to download pages from the Reticulum network.
     """
 
     def __init__(self):
@@ -64,7 +63,7 @@ class PageFetcher:
             ev.set()
 
         link.set_link_established_callback(
-            lambda l: l.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed)
+            lambda link: link.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed)
         )
         ev.wait(timeout=15)
         data_str = result['data'] or 'No content received'

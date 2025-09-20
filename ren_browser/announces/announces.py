@@ -1,6 +1,6 @@
+import pathlib
 import time
 from dataclasses import dataclass
-import pathlib
 
 import RNS
 
@@ -12,8 +12,7 @@ class Announce:
     timestamp: int
 
 class AnnounceService:
-    """
-    Service to listen for Reticulum announces and collect them.
+    """Service to listen for Reticulum announces and collect them.
     Calls update_callback whenever a new announce is received.
     """
 
@@ -37,7 +36,7 @@ class AnnounceService:
         if app_data:
             try:
                 display_name = app_data.decode("utf-8")
-            except:
+            except UnicodeDecodeError:
                 pass
         announce = Announce(destination_hash.hex(), display_name, ts)
         self.announces = [ann for ann in self.announces if ann.destination_hash != announce.destination_hash]
