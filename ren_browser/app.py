@@ -1,15 +1,26 @@
+"""Ren Browser main application module.
+
+This module provides the entry point and platform-specific launchers for the
+Ren Browser, a browser for the Reticulum Network built with Flet.
+"""
 import argparse
-import pathlib
 
 import flet as ft
 import RNS
 from flet import AppView, Page
 
+from ren_browser.storage.storage import initialize_storage
 from ren_browser.ui.ui import build_ui
 
 RENDERER = "plaintext"
+RNS_CONFIG_DIR = None
 
 async def main(page: Page):
+    """Initialize and launch the Ren Browser application.
+
+    Sets up the loading screen, initializes Reticulum network,
+    and builds the main UI.
+    """
     loader = ft.Container(
         expand=True,
         alignment=ft.alignment.center,
@@ -23,9 +34,18 @@ async def main(page: Page):
     page.update()
 
     def init_ret():
-        config_dir = pathlib.Path(__file__).resolve().parents[1] / "config"
+        # Initialize storage system
+        storage = initialize_storage(page)
+
+        # Get Reticulum config directory
+        if RNS_CONFIG_DIR:
+            config_dir = RNS_CONFIG_DIR
+        else:
+            config_dir = storage.get_reticulum_config_path()
         try:
             RNS.Reticulum(str(config_dir))
+            import ren_browser.logs
+            ren_browser.logs.setup_rns_logging()
         except (OSError, ValueError):
             pass
         page.controls.clear()
@@ -35,13 +55,22 @@ async def main(page: Page):
     page.run_thread(init_ret)
 
 def run():
-    global RENDERER
+    """Run Ren Browser with command line argument parsing."""
+    global RENDERER, RNS_CONFIG_DIR
     parser = argparse.ArgumentParser(description="Ren Browser")
     parser.add_argument("-r", "--renderer", choices=["plaintext", "micron"], default=RENDERER, help="Select renderer (plaintext or micron)")
     parser.add_argument("-w", "--web", action="store_true", help="Launch in web browser mode")
     parser.add_argument("-p", "--port", type=int, default=None, help="Port for web server")
+    parser.add_argument("-c", "--config-dir", type=str, default=None, help="RNS config directory (default: ~/.reticulum/)")
     args = parser.parse_args()
     RENDERER = args.renderer
+
+    # Set RNS config directory
+    if args.config_dir:
+        RNS_CONFIG_DIR = args.config_dir
+    else:
+        import pathlib
+        RNS_CONFIG_DIR = str(pathlib.Path.home() / ".reticulum")
 
     if args.web:
         if args.port is not None:
