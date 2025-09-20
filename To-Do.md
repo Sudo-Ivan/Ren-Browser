@@ -1,5 +1,11 @@
 # To-Do
 
+## Bugs
+
+- [ ] Test Config Saving on Android. In my testing and also reported via Email.
+- [ ] Fix persisting app state in background on Android. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
+- [ ] Fix tabs dragging/reordering and overflow issues. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
+
 ## UI
 
 - [ ] Tab dragging/reordering.
@@ -32,7 +38,6 @@
 - [ ] Page refreshing.
 - [ ] Interface status page.
 - [ ] Plugins. 
-
 
 ## Distribution
 
