@@ -6,6 +6,9 @@ Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
 
 Built using [Flet](https://flet.dev/).
 
+> [!WARNING]  
+> Android and Linux builds are currently broken due to a Dart language version compatibility issue in Flet 0.28.3. The webview_flutter_android dependency requires Dart 3.9, but Flutter 3.29.2 only supports up to Dart 3.7. This will be resolved when Flet updates to a newer Flutter version.
+
 Currently, you can find `Linux` and `Android` builds in action artifacts in the [GitHub Actions](https://github.com/Sudo-Ivan/Ren-Browser/actions/workflows/build.yml) page, click on the latest workflow run. More platforms will be added in the future.
 
 ## Renderers
