@@ -1,3 +1,8 @@
+"""Tab management system for Ren Browser.
+
+Provides tab creation, switching, and content management functionality
+for the browser interface.
+"""
 from types import SimpleNamespace
 
 import flet as ft
@@ -7,7 +12,18 @@ from ren_browser.renderer.plaintext import render_plaintext
 
 
 class TabsManager:
+    """Manages browser tabs and their content.
+
+    Handles tab creation, switching, closing, and content rendering.
+    """
+
     def __init__(self, page: ft.Page):
+        """Initialize the tab manager.
+
+        Args:
+            page: Flet page instance for UI updates.
+
+        """
         import ren_browser.app as app_module
         self.page = page
         self.manager = SimpleNamespace(tabs=[], index=0)
@@ -76,6 +92,12 @@ class TabsManager:
         self.page.update()
 
     def select_tab(self, idx: int):
+        """Select and display the tab at the given index.
+
+        Args:
+            idx: Index of the tab to select.
+
+        """
         self.manager.index = idx
         for i, control in enumerate(self.tab_bar.controls[:-2]):
             if i == idx:
