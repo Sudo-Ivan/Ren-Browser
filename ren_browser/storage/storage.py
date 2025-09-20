@@ -65,7 +65,8 @@ class StorageManager:
         """Get the path to the main configuration file."""
         return self._storage_dir / "config"
 
-    def get_reticulum_config_path(self) -> pathlib.Path:
+    @staticmethod
+    def get_reticulum_config_path() -> pathlib.Path:
         """Get the path to the Reticulum configuration directory."""
         # Check for global override from app
         try:
@@ -229,7 +230,8 @@ class StorageManager:
             "has_client_storage": self.page and hasattr(self.page, "client_storage"),
         }
 
-    def _is_writable(self, path: pathlib.Path) -> bool:
+    @staticmethod
+    def _is_writable(path: pathlib.Path) -> bool:
         """Check if a directory is writable."""
         try:
             test_file = path / ".write_test"

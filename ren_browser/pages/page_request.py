@@ -29,7 +29,8 @@ class PageFetcher:
         """Initialize the page fetcher and Reticulum connection."""
         # RNS should already be initialized by main app
 
-    def fetch_page(self, req: PageRequest) -> str:
+    @staticmethod
+    def fetch_page(req: PageRequest) -> str:
         """Download page content for the given PageRequest.
 
         Args:
