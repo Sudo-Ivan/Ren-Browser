@@ -71,8 +71,7 @@ class StorageManager:
         """Get the path to the main configuration file."""
         return self._storage_dir / "config"
 
-    @staticmethod
-    def get_reticulum_config_path() -> pathlib.Path:
+    def get_reticulum_config_path(self) -> pathlib.Path:
         """Get the path to the Reticulum configuration directory."""
         # Check for global override from app
         try:
@@ -82,6 +81,10 @@ class StorageManager:
                 return pathlib.Path(RNS_CONFIG_DIR)
         except ImportError:
             pass
+
+        # On Android, use app storage directory instead of ~/.reticulum
+        if os.name == "posix" and "ANDROID_ROOT" in os.environ:
+            return self._storage_dir / "reticulum"
 
         # Default to standard RNS config directory
         return pathlib.Path.home() / ".reticulum"
@@ -97,6 +100,7 @@ class StorageManager:
 
         """
         try:
+            # Always save to client storage first (most reliable on mobile)
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set("ren_browser_config", config_content)
 
@@ -107,6 +111,7 @@ class StorageManager:
 
             # Also save to local config path as backup
             config_path = self.get_config_path()
+            config_path.parent.mkdir(parents=True, exist_ok=True)
             config_path.write_text(config_content, encoding="utf-8")
             return True
 
@@ -146,6 +151,13 @@ class StorageManager:
             Configuration text, or empty string if not found
 
         """
+        # On Android, prioritize client storage first as it's more reliable
+        if os.name == "posix" and "ANDROID_ROOT" in os.environ:
+            if self.page and hasattr(self.page, "client_storage"):
+                stored_config = self.page.client_storage.get("ren_browser_config")
+                if stored_config:
+                    return stored_config
+
         try:
             reticulum_config_path = self.get_reticulum_config_path() / "config"
             if reticulum_config_path.exists():
@@ -155,13 +167,18 @@ class StorageManager:
             if config_path.exists():
                 return config_path.read_text(encoding="utf-8")
 
+            # Fallback to client storage for non-Android or if files don't exist
             if self.page and hasattr(self.page, "client_storage"):
                 stored_config = self.page.client_storage.get("ren_browser_config")
                 if stored_config:
                     return stored_config
 
         except (OSError, PermissionError, UnicodeDecodeError):
-            pass
+            # If file access fails, try client storage as fallback
+            if self.page and hasattr(self.page, "client_storage"):
+                stored_config = self.page.client_storage.get("ren_browser_config")
+                if stored_config:
+                    return stored_config
 
         return ""
 

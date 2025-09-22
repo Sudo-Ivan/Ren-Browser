@@ -57,11 +57,13 @@ async def main(page: Page):
         # Initialize storage system
         storage = initialize_storage(page)
 
-        # Get Reticulum config directory
-        if RNS_CONFIG_DIR:
-            config_dir = RNS_CONFIG_DIR
-        else:
-            config_dir = storage.get_reticulum_config_path()
+        # Get Reticulum config directory from storage manager
+        config_dir = storage.get_reticulum_config_path()
+
+        # Update the global RNS_CONFIG_DIR so RNS uses the right path
+        global RNS_CONFIG_DIR
+        RNS_CONFIG_DIR = str(config_dir)
+
         try:
             # Set up logging capture first, before RNS init
             import ren_browser.logs
