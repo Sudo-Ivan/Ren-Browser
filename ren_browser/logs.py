@@ -32,7 +32,7 @@ def setup_rns_logging():
     """Set up RNS log replacement. Call this after RNS.Reticulum initialization."""
     global _original_rns_log
     # Only set up if not already done and if RNS.log is not already our function
-    if RNS.log != log_ret and _original_rns_log != log_ret:
+    if RNS.log is not log_ret and _original_rns_log is not log_ret:
         _original_rns_log = RNS.log
         RNS.log = log_ret
 
