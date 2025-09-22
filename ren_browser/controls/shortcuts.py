@@ -3,6 +3,7 @@
 Provides keyboard event handling and delegation to tab manager
 and UI components.
 """
+
 import flet as ft
 
 

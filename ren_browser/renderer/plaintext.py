@@ -2,6 +2,7 @@
 
 Provides fallback rendering for plaintext content and source viewing.
 """
+
 import flet as ft
 
 

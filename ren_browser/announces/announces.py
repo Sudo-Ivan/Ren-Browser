@@ -3,11 +3,11 @@
 This module provides services for listening to and collecting network
 announces from the Reticulum network.
 """
+
 import time
 from dataclasses import dataclass
 
 import RNS
-
 
 
 @dataclass
@@ -20,6 +20,7 @@ class Announce:
     destination_hash: str
     display_name: str | None
     timestamp: int
+
 
 class AnnounceService:
     """Service to listen for Reticulum announces and collect them.
@@ -60,7 +61,11 @@ class AnnounceService:
             except UnicodeDecodeError:
                 pass
         announce = Announce(destination_hash.hex(), display_name, ts)
-        self.announces = [ann for ann in self.announces if ann.destination_hash != announce.destination_hash]
+        self.announces = [
+            ann
+            for ann in self.announces
+            if ann.destination_hash != announce.destination_hash
+        ]
         self.announces.insert(0, announce)
         if self.update_callback:
             self.update_callback(self.announces)

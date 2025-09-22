@@ -3,6 +3,7 @@
 Builds the complete browser interface including tabs, navigation,
 announce handling, and content rendering.
 """
+
 import flet as ft
 from flet import Page
 
@@ -27,10 +28,12 @@ def build_ui(page: Page):
 
     page_fetcher = PageFetcher()
     announce_list = ft.ListView(expand=True, spacing=1)
+
     def update_announces(ann_list):
         announce_list.controls.clear()
         for ann in ann_list:
             label = ann.display_name or ann.destination_hash
+
             def on_click_ann(e, dest=ann.destination_hash, disp=ann.display_name):
                 title = disp or "Anonymous"
                 full_url = f"{dest}:/page/index.mu"
@@ -41,12 +44,14 @@ def build_ui(page: Page):
                 tab["url_field"].value = full_url
                 tab_manager.select_tab(idx)
                 page.update()
+
                 def fetch_and_update():
                     req = PageRequest(destination_hash=dest, page_path="/page/index.mu")
                     try:
                         result = page_fetcher.fetch_page(req)
                     except Exception as ex:
                         import ren_browser.app as app_module
+
                         app_module.log_error(str(ex))
                         result = f"Error: {ex}"
                     try:
@@ -62,13 +67,21 @@ def build_ui(page: Page):
                     if tab_manager.manager.index == idx:
                         tab_manager.content_container.content = tab["content"]
                     page.update()
+
                 page.run_thread(fetch_and_update)
+
             announce_list.controls.append(ft.TextButton(label, on_click=on_click_ann))
         page.update()
+
     AnnounceService(update_callback=update_announces)
     page.drawer = ft.NavigationDrawer(
         controls=[
-            ft.Text("Announcements", weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, expand=True),
+            ft.Text(
+                "Announcements",
+                weight=ft.FontWeight.BOLD,
+                text_align=ft.TextAlign.CENTER,
+                expand=True,
+            ),
             ft.Divider(),
             announce_list,
         ],
@@ -76,12 +89,22 @@ def build_ui(page: Page):
     page.appbar.leading = ft.IconButton(
         ft.Icons.MENU,
         tooltip="Toggle sidebar",
-        on_click=lambda e: (setattr(page.drawer, "open", not page.drawer.open), page.update()),
+        on_click=lambda e: (
+            setattr(page.drawer, "open", not page.drawer.open),
+            page.update(),
+        ),
     )
 
     tab_manager = TabsManager(page)
     from ren_browser.ui.settings import open_settings_tab
-    page.appbar.actions = [ft.IconButton(ft.Icons.SETTINGS, tooltip="Settings", on_click=lambda e: open_settings_tab(page, tab_manager))]
+
+    page.appbar.actions = [
+        ft.IconButton(
+            ft.Icons.SETTINGS,
+            tooltip="Settings",
+            on_click=lambda e: open_settings_tab(page, tab_manager),
+        )
+    ]
     Shortcuts(page, tab_manager)
     url_bar = ft.Row(
         controls=[
@@ -91,15 +114,19 @@ def build_ui(page: Page):
     )
     page.appbar.title = url_bar
     orig_select_tab = tab_manager.select_tab
+
     def _select_tab_and_update_url(i):
         orig_select_tab(i)
         tab = tab_manager.manager.tabs[i]
         url_bar.controls.clear()
         url_bar.controls.extend([tab["url_field"], tab["go_btn"]])
         page.update()
+
     tab_manager.select_tab = _select_tab_and_update_url
+
     def _update_content_width(e=None):
         tab_manager.content_container.width = page.width
+
     _update_content_width()
     page.on_resized = lambda e: (_update_content_width(), page.update())
     main_area = ft.Column(

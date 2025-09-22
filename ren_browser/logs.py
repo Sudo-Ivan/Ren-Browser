@@ -3,6 +3,7 @@
 Provides centralized logging for application events, errors, and
 Reticulum network activities.
 """
+
 import datetime
 
 import RNS
@@ -11,6 +12,7 @@ APP_LOGS: list[str] = []
 ERROR_LOGS: list[str] = []
 RET_LOGS: list[str] = []
 _original_rns_log = RNS.log
+
 
 def log_ret(msg, *args, **kwargs):
     """Log Reticulum messages with timestamp.
@@ -25,6 +27,7 @@ def log_ret(msg, *args, **kwargs):
     RET_LOGS.append(f"[{timestamp}] {msg}")
     return _original_rns_log(msg, *args, **kwargs)
 
+
 def setup_rns_logging():
     """Set up RNS log replacement. Call this after RNS.Reticulum initialization."""
     global _original_rns_log
@@ -32,6 +35,7 @@ def setup_rns_logging():
     if RNS.log != log_ret and _original_rns_log != log_ret:
         _original_rns_log = RNS.log
         RNS.log = log_ret
+
 
 def log_error(msg: str):
     """Log error messages to both error and application logs.
@@ -43,6 +47,7 @@ def log_error(msg: str):
     timestamp = datetime.datetime.now().isoformat()
     ERROR_LOGS.append(f"[{timestamp}] {msg}")
     APP_LOGS.append(f"[{timestamp}] ERROR: {msg}")
+
 
 def log_app(msg: str):
     """Log application messages.

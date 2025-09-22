@@ -3,12 +3,12 @@
 Handles downloading pages from the Reticulum network using
 the nomadnetwork protocol.
 """
+
 import threading
 import time
 from dataclasses import dataclass
 
 import RNS
-
 
 
 @dataclass
@@ -21,6 +21,7 @@ class PageRequest:
     destination_hash: str
     page_path: str
     field_data: dict | None = None
+
 
 class PageFetcher:
     """Fetcher to download pages from the Reticulum network."""
@@ -43,7 +44,9 @@ class PageFetcher:
             Exception: If no path to destination or identity not found.
 
         """
-        RNS.log(f"PageFetcher: starting fetch of {req.page_path} from {req.destination_hash}")
+        RNS.log(
+            f"PageFetcher: starting fetch of {req.page_path} from {req.destination_hash}"
+        )
         dest_bytes = bytes.fromhex(req.destination_hash)
         if not RNS.Transport.has_path(dest_bytes):
             RNS.Transport.request_path(dest_bytes)
@@ -79,9 +82,16 @@ class PageFetcher:
             ev.set()
 
         link.set_link_established_callback(
-            lambda link: link.request(req.page_path, req.field_data, response_callback=on_response, failed_callback=on_failed)
+            lambda link: link.request(
+                req.page_path,
+                req.field_data,
+                response_callback=on_response,
+                failed_callback=on_failed,
+            )
         )
         ev.wait(timeout=15)
         data_str = result["data"] or "No content received"
-        RNS.log(f"PageFetcher: received data for {req.destination_hash}:{req.page_path}")
+        RNS.log(
+            f"PageFetcher: received data for {req.destination_hash}:{req.page_path}"
+        )
         return data_str

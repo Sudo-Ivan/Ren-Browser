@@ -3,6 +3,7 @@
 Provides persistent storage for configuration, bookmarks, history,
 and other application data across different platforms.
 """
+
 import json
 import os
 import pathlib
@@ -38,7 +39,9 @@ class StorageManager:
         if os.name == "posix" and "ANDROID_ROOT" in os.environ:
             # Android - use app's private files directory
             storage_dir = pathlib.Path("/data/data/com.ren_browser/files")
-        elif hasattr(os, "uname") and "iOS" in str(getattr(os, "uname", lambda: "")()).replace("iPhone", "iOS"):
+        elif hasattr(os, "uname") and "iOS" in str(
+            getattr(os, "uname", lambda: "")()
+        ).replace("iPhone", "iOS"):
             # iOS - use app's documents directory
             storage_dir = pathlib.Path.home() / "Documents" / "ren_browser"
         else:
@@ -46,7 +49,9 @@ class StorageManager:
             if "APPDATA" in os.environ:  # Windows
                 storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
             elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard
-                storage_dir = pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
+                storage_dir = (
+                    pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
+                )
             else:
                 storage_dir = pathlib.Path.home() / ".ren_browser"
 
@@ -58,6 +63,7 @@ class StorageManager:
             self._storage_dir.mkdir(parents=True, exist_ok=True)
         except (OSError, PermissionError):
             import tempfile
+
             self._storage_dir = pathlib.Path(tempfile.gettempdir()) / "ren_browser"
             self._storage_dir.mkdir(parents=True, exist_ok=True)
 
@@ -71,6 +77,7 @@ class StorageManager:
         # Check for global override from app
         try:
             from ren_browser.app import RNS_CONFIG_DIR
+
             if RNS_CONFIG_DIR:
                 return pathlib.Path(RNS_CONFIG_DIR)
         except ImportError:
@@ -111,7 +118,9 @@ class StorageManager:
         try:
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set("ren_browser_config", config_content)
-                self.page.client_storage.set("ren_browser_config_error", f"File save failed: {error}")
+                self.page.client_storage.set(
+                    "ren_browser_config_error", f"File save failed: {error}"
+                )
                 return True
 
             try:
@@ -122,6 +131,7 @@ class StorageManager:
                 pass
 
             import tempfile
+
             temp_path = pathlib.Path(tempfile.gettempdir()) / "ren_browser_config.txt"
             temp_path.write_text(config_content, encoding="utf-8")
             return True
@@ -163,7 +173,9 @@ class StorageManager:
                 json.dump(bookmarks, f, indent=2)
 
             if self.page and hasattr(self.page, "client_storage"):
-                self.page.client_storage.set("ren_browser_bookmarks", json.dumps(bookmarks))
+                self.page.client_storage.set(
+                    "ren_browser_bookmarks", json.dumps(bookmarks)
+                )
 
             return True
         except Exception:
@@ -267,6 +279,7 @@ def get_rns_config_directory() -> str:
     """Get the RNS config directory, checking for global override."""
     try:
         from ren_browser.app import RNS_CONFIG_DIR
+
         if RNS_CONFIG_DIR:
             return RNS_CONFIG_DIR
     except ImportError:
