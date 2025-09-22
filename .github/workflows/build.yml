@@ -105,13 +105,13 @@ jobs:
 
       - name: Create draft release
         uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
+        if: github.ref_type == 'tag'
         with:
           draft: true
           files: |
-            ./artifacts/linux/**/*
-            ./artifacts/apk/**/*
+            ./artifacts/linux/*
+            ./artifacts/apk/*
           name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
           body: |
             ## Release ${{ github.ref_name }}
             
