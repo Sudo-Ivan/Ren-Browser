@@ -28,7 +28,9 @@ class TestBuildUI:
     @patch("ren_browser.pages.page_request.PageFetcher")
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
-    def test_build_ui_appbar_setup(self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page):
+    def test_build_ui_appbar_setup(
+        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page
+    ):
         """Test that build_ui sets up the app bar correctly."""
         mock_tab_manager = Mock()
         mock_tabs.return_value = mock_tab_manager
@@ -48,7 +50,9 @@ class TestBuildUI:
     @patch("ren_browser.pages.page_request.PageFetcher")
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
-    def test_build_ui_drawer_setup(self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page):
+    def test_build_ui_drawer_setup(
+        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page
+    ):
         """Test that build_ui sets up the drawer correctly."""
         mock_tab_manager = Mock()
         mock_tabs.return_value = mock_tab_manager
@@ -116,9 +120,10 @@ class TestOpenSettingsTab:
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch("pathlib.Path.read_text", return_value="config"), \
-             patch("pathlib.Path.write_text"):
-
+        with (
+            patch("pathlib.Path.read_text", return_value="config"),
+            patch("pathlib.Path.write_text"),
+        ):
             open_settings_tab(mock_page, mock_tab_manager)
 
             # Get the settings content that was added
@@ -129,7 +134,10 @@ class TestOpenSettingsTab:
             for control in settings_content.controls:
                 if hasattr(control, "controls"):
                     for sub_control in control.controls:
-                        if hasattr(sub_control, "text") and sub_control.text == "Save and Restart":
+                        if (
+                            hasattr(sub_control, "text")
+                            and sub_control.text == "Save and Restart"
+                        ):
                             save_btn = sub_control
                             break
 
@@ -142,7 +150,10 @@ class TestOpenSettingsTab:
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch('ren_browser.ui.settings.get_storage_manager', return_value=mock_storage_manager):
+        with patch(
+            "ren_browser.ui.settings.get_storage_manager",
+            return_value=mock_storage_manager,
+        ):
             open_settings_tab(mock_page, mock_tab_manager)
 
             settings_content = mock_tab_manager._add_tab_internal.call_args[0][1]
@@ -155,10 +166,14 @@ class TestOpenSettingsTab:
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch('ren_browser.ui.settings.get_storage_manager', return_value=mock_storage_manager), \
-             patch("ren_browser.logs.ERROR_LOGS", ["Error 1", "Error 2"]), \
-             patch("ren_browser.logs.RET_LOGS", ["RNS log 1", "RNS log 2"]):
-
+        with (
+            patch(
+                "ren_browser.ui.settings.get_storage_manager",
+                return_value=mock_storage_manager,
+            ),
+            patch("ren_browser.logs.ERROR_LOGS", ["Error 1", "Error 2"]),
+            patch("ren_browser.logs.RET_LOGS", ["RNS log 1", "RNS log 2"]),
+        ):
             open_settings_tab(mock_page, mock_tab_manager)
 
             mock_tab_manager._add_tab_internal.assert_called_once()

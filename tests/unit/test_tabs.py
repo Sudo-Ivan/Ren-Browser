@@ -13,17 +13,19 @@ class TestTabsManager:
     @pytest.fixture
     def tabs_manager(self, mock_page):
         """Create a TabsManager instance for testing."""
-        with patch("ren_browser.app.RENDERER", "plaintext"), \
-             patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render:
-
+        with (
+            patch("ren_browser.app.RENDERER", "plaintext"),
+            patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render,
+        ):
             mock_render.return_value = Mock(spec=ft.Text)
             return TabsManager(mock_page)
 
     def test_tabs_manager_init(self, mock_page):
         """Test TabsManager initialization."""
-        with patch("ren_browser.app.RENDERER", "plaintext"), \
-             patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render:
-
+        with (
+            patch("ren_browser.app.RENDERER", "plaintext"),
+            patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render,
+        ):
             mock_render.return_value = Mock(spec=ft.Text)
             manager = TabsManager(mock_page)
 
@@ -55,9 +57,10 @@ class TestTabsManager:
 
     def test_on_add_click(self, tabs_manager):
         """Test adding a new tab via button click."""
-        with patch("ren_browser.app.RENDERER", "plaintext"), \
-             patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render:
-
+        with (
+            patch("ren_browser.app.RENDERER", "plaintext"),
+            patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render,
+        ):
             mock_render.return_value = Mock(spec=ft.Text)
             initial_count = len(tabs_manager.manager.tabs)
 
@@ -198,7 +201,7 @@ class TestTabsManager:
         """Test management of multiple tabs."""
         # Add several tabs
         for i in range(3):
-            tabs_manager._add_tab_internal(f"Tab {i+2}", Mock())
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
 
         assert len(tabs_manager.manager.tabs) == 4
 
@@ -220,7 +223,13 @@ class TestTabsManager:
         tabs_manager._add_tab_internal("Tab 3", content2)
 
         tabs_manager.select_tab(1)
-        assert tabs_manager.content_container.content == tabs_manager.manager.tabs[1]["content"]
+        assert (
+            tabs_manager.content_container.content
+            == tabs_manager.manager.tabs[1]["content"]
+        )
 
         tabs_manager.select_tab(2)
-        assert tabs_manager.content_container.content == tabs_manager.manager.tabs[2]["content"]
+        assert (
+            tabs_manager.content_container.content
+            == tabs_manager.manager.tabs[2]["content"]
+        )

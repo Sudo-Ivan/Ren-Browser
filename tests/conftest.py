@@ -36,6 +36,7 @@ def mock_rns():
 
     # Mock at the module level for all imports
     import sys
+
     sys.modules["RNS"] = mock_rns
 
     yield mock_rns
@@ -51,7 +52,7 @@ def sample_announce_data():
     return {
         "destination_hash": "1234567890abcdef",
         "display_name": "Test Node",
-        "timestamp": 1234567890
+        "timestamp": 1234567890,
     }
 
 
@@ -59,10 +60,9 @@ def sample_announce_data():
 def sample_page_request():
     """Sample page request for testing."""
     from ren_browser.pages.page_request import PageRequest
+
     return PageRequest(
-        destination_hash="1234567890abcdef",
-        page_path="/page/index.mu",
-        field_data=None
+        destination_hash="1234567890abcdef", page_path="/page/index.mu", field_data=None
     )
 
 
@@ -75,11 +75,11 @@ def mock_storage_manager():
     mock_storage.get_config_path.return_value = Mock()
     mock_storage.get_reticulum_config_path.return_value = Mock()
     mock_storage.get_storage_info.return_value = {
-        'storage_dir': '/mock/storage',
-        'config_path': '/mock/storage/config.txt',
-        'reticulum_config_path': '/mock/storage/reticulum',
-        'storage_dir_exists': True,
-        'storage_dir_writable': True,
-        'has_client_storage': True,
+        "storage_dir": "/mock/storage",
+        "config_path": "/mock/storage/config.txt",
+        "reticulum_config_path": "/mock/storage/reticulum",
+        "storage_dir_exists": True,
+        "storage_dir_writable": True,
+        "has_client_storage": True,
     }
     return mock_storage

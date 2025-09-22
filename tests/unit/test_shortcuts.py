@@ -215,7 +215,7 @@ class TestShortcuts:
         url_field2 = Mock()
         mock_tab_manager.manager.tabs = [
             {"url_field": url_field1},
-            {"url_field": url_field2}
+            {"url_field": url_field2},
         ]
         mock_tab_manager.manager.index = 1  # Second tab
 

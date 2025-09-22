@@ -58,7 +58,9 @@ class TestLogsModule:
 
             assert len(logs.RET_LOGS) == 1
             assert logs.RET_LOGS[0] == "[2023-01-01T12:00:00] Test RNS message"
-            logs._original_rns_log.assert_called_once_with("Test RNS message", "arg1", kwarg1="value1")
+            logs._original_rns_log.assert_called_once_with(
+                "Test RNS message", "arg1", kwarg1="value1"
+            )
             assert result == "original_result"
 
     def test_multiple_log_calls(self):

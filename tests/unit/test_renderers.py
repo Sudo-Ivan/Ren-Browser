@@ -57,7 +57,7 @@ class TestPlaintextRenderer:
 
 class TestMicronRenderer:
     """Test cases for the micron renderer.
-    
+
     Note: The micron renderer is currently a placeholder implementation
     that displays raw content without markup processing.
     """

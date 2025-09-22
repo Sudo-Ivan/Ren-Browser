@@ -28,8 +28,14 @@ class TestAppIntegration:
     def test_entry_points_exist(self):
         """Test that all expected entry points exist and are callable."""
         entry_points = [
-            "run", "web", "android", "ios",
-            "run_dev", "web_dev", "android_dev", "ios_dev"
+            "run",
+            "web",
+            "android",
+            "ios",
+            "run_dev",
+            "web_dev",
+            "android_dev",
+            "ios_dev",
         ]
 
         for entry_point in entry_points:

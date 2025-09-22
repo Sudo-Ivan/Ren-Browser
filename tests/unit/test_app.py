@@ -35,9 +35,7 @@ class TestApp:
 
     def test_run_with_default_args(self, mock_rns):
         """Test run function with default arguments."""
-        with patch("sys.argv", ["ren-browser"]), \
-             patch("flet.app") as mock_ft_app:
-
+        with patch("sys.argv", ["ren-browser"]), patch("flet.app") as mock_ft_app:
             app.run()
 
             mock_ft_app.assert_called_once()
@@ -46,9 +44,10 @@ class TestApp:
 
     def test_run_with_web_flag(self, mock_rns):
         """Test run function with web flag."""
-        with patch("sys.argv", ["ren-browser", "--web"]), \
-             patch("flet.app") as mock_ft_app:
-
+        with (
+            patch("sys.argv", ["ren-browser", "--web"]),
+            patch("flet.app") as mock_ft_app,
+        ):
             app.run()
 
             mock_ft_app.assert_called_once()
@@ -58,9 +57,10 @@ class TestApp:
 
     def test_run_with_web_and_port(self, mock_rns):
         """Test run function with web flag and custom port."""
-        with patch("sys.argv", ["ren-browser", "--web", "--port", "8080"]), \
-             patch("flet.app") as mock_ft_app:
-
+        with (
+            patch("sys.argv", ["ren-browser", "--web", "--port", "8080"]),
+            patch("flet.app") as mock_ft_app,
+        ):
             app.run()
 
             mock_ft_app.assert_called_once()
@@ -71,9 +71,10 @@ class TestApp:
 
     def test_run_with_renderer_flag(self, mock_rns):
         """Test run function with renderer selection."""
-        with patch("sys.argv", ["ren-browser", "--renderer", "micron"]), \
-             patch("flet.app"):
-
+        with (
+            patch("sys.argv", ["ren-browser", "--renderer", "micron"]),
+            patch("flet.app"),
+        ):
             app.run()
 
             assert app.RENDERER == "micron"
@@ -131,8 +132,10 @@ class TestApp:
         """Test that RENDERER global is properly updated."""
         original_renderer = app.RENDERER
 
-        with patch("sys.argv", ["ren-browser", "--renderer", "micron"]), \
-             patch("flet.app"):
+        with (
+            patch("sys.argv", ["ren-browser", "--renderer", "micron"]),
+            patch("flet.app"),
+        ):
             app.run()
             assert app.RENDERER == "micron"
 

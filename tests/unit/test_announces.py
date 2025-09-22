@@ -1,4 +1,3 @@
-
 from ren_browser.announces.announces import Announce
 
 
@@ -10,7 +9,7 @@ class TestAnnounce:
         announce = Announce(
             destination_hash="1234567890abcdef",
             display_name="Test Node",
-            timestamp=1234567890
+            timestamp=1234567890,
         )
 
         assert announce.destination_hash == "1234567890abcdef"
@@ -20,18 +19,17 @@ class TestAnnounce:
     def test_announce_with_none_display_name(self):
         """Test Announce creation with None display name."""
         announce = Announce(
-            destination_hash="1234567890abcdef",
-            display_name=None,
-            timestamp=1234567890
+            destination_hash="1234567890abcdef", display_name=None, timestamp=1234567890
         )
 
         assert announce.destination_hash == "1234567890abcdef"
         assert announce.display_name is None
         assert announce.timestamp == 1234567890
 
+
 class TestAnnounceService:
     """Test cases for the AnnounceService class.
-    
+
     Note: These tests are simplified due to complex RNS integration.
     Full integration tests will be added in the future.
     """
