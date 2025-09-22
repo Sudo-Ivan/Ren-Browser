@@ -64,6 +64,16 @@ async def main(page: Page):
         global RNS_CONFIG_DIR
         RNS_CONFIG_DIR = str(config_dir)
 
+        # Ensure any saved config is written to filesystem before RNS init
+        try:
+            saved_config = storage.load_config()
+            if saved_config and saved_config.strip():
+                config_file_path = config_dir / "config"
+                config_file_path.parent.mkdir(parents=True, exist_ok=True)
+                config_file_path.write_text(saved_config, encoding="utf-8")
+        except Exception as e:
+            print(f"Warning: Failed to write config file: {e}")
+
         try:
             # Set up logging capture first, before RNS init
             import ren_browser.logs
