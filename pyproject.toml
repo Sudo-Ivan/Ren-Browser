@@ -22,10 +22,6 @@ ren-browser = "ren_browser.app:run"
 ren-browser-web = "ren_browser.app:web"
 ren-browser-android = "ren_browser.app:android"
 ren-browser-ios = "ren_browser.app:ios"
-ren-browser-dev = "ren_browser.app:run_dev"
-ren-browser-web-dev = "ren_browser.app:web_dev"
-ren-browser-android-dev = "ren_browser.app:android_dev"
-ren-browser-ios-dev = "ren_browser.app:ios_dev"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.11"
