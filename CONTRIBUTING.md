@@ -7,6 +7,37 @@ I welcome all contributions to the project.
 - Styling/Design (I am bad at this)
 - Documentation
 - Micron Renderer/Parser
+- Android and Flet (config/permissions/etc)
+
+## Project Structure
+
+```
+Ren-Browser/
+├── ren_browser/                   # Main Python application package
+│   ├── announces/                 # Reticulum network announce handling
+│   │   ├── announces.py
+│   ├── app.py                     # Main application entry point
+│   ├── controls/                  # UI controls and interactions
+│   │   ├── shortcuts.py          # Keyboard shortcuts handling
+│   ├── logs.py                    # Centralized logging system
+│   ├── pages/                     # Page fetching and request handling
+│   │   ├── page_request.py
+│   ├── profiler/                  # Performance profiling (placeholder)
+│   ├── renderer/                  # Content rendering system
+│   │   ├── micron.py             # Micron markup renderer (WIP)
+│   │   └── plaintext.py          # Plaintext fallback renderer
+│   ├── storage/                   # Cross-platform storage management
+│   │   ├── storage.py
+│   ├── tabs/                      # Tab management system
+│   │   ├── tabs.py
+│   ├── ui/                        # User interface components
+│   │   ├── settings.py           # Settings interface
+│   │   └── ui.py                 # Main UI construction
+├── tests/                         # Test suite
+│   ├── unit/                     # Unit tests
+│   ├── integration/              # Integration tests
+│   └── conftest.py               # Test configuration
+```
 
 ## Rules
 
