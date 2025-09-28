@@ -4,11 +4,27 @@ Provides rendering capabilities for micron markup content,
 currently implemented as a placeholder.
 """
 
+import re
+
 import flet as ft
 
 
 class MicronParser:
+    """Parses micron markup and converts it to Flet controls.
+
+    Supports headings, dividers, inline formatting, ASCII art detection,
+    and color/formatting codes.
+    """
+
     def __init__(self, dark_theme=True, enable_force_monospace=True, ascii_art_scale=0.75):
+        """Initialize the MicronParser.
+
+        Args:
+            dark_theme (bool): Whether to use dark theme styles.
+            enable_force_monospace (bool): If True, force monospace font.
+            ascii_art_scale (float): Scale factor for ASCII art font size.
+
+        """
         self.dark_theme = dark_theme
         self.enable_force_monospace = enable_force_monospace
         self.ascii_art_scale = ascii_art_scale
@@ -38,7 +54,15 @@ class MicronParser:
             self.SELECTED_STYLES = self.STYLES_LIGHT
 
     def convert_micron_to_controls(self, markup: str) -> list[ft.Control]:
-        """Convert micron markup to Flet controls."""
+        """Convert micron markup to a list of Flet controls.
+
+        Args:
+            markup (str): The micron markup string.
+
+        Returns:
+            list[ft.Control]: List of Flet controls representing the markup.
+
+        """
         controls = []
         state = self._init_state()
         lines = markup.split("\n")
@@ -51,7 +75,12 @@ class MicronParser:
         return controls
 
     def _init_state(self) -> dict:
-        """Initialize the parser state."""
+        """Initialize the parsing state for a new document.
+
+        Returns:
+            dict: The initial state dictionary.
+
+        """
         return {
             "literal": False,
             "depth": 0,
@@ -67,37 +96,49 @@ class MicronParser:
         }
 
     def _parse_line(self, line: str, state: dict) -> list[ft.Control]:
-        """Parse a single line of micron markup."""
-        if not line:
-            return [ft.Text("", selectable=True, font_family="monospace")]
+        """Parse a single line of micron markup.
 
-        # Handle literal mode toggle
+        Args:
+            line (str): The line to parse.
+            state (dict): The current parsing state.
+
+        Returns:
+            list[ft.Control]: Controls for this line, or empty if none.
+
+        """
+        if not line:
+            return []
+
         if line == "`=":
             state["literal"] = not state["literal"]
             return []
 
-        # Handle comments
         if not state["literal"] and line.startswith("#"):
             return []
 
-        # Handle section reset
         if not state["literal"] and line.startswith("<"):
             state["depth"] = 0
             return self._parse_line(line[1:], state)
 
-        # Handle headings
         if not state["literal"] and line.startswith(">"):
             return self._parse_heading(line, state)
 
-        # Handle dividers
         if not state["literal"] and line.startswith("-"):
             return self._parse_divider(line, state)
 
-        # Parse inline formatting
         return self._parse_inline_formatting(line, state)
 
     def _parse_inline_formatting(self, line: str, state: dict) -> list[ft.Control]:
-        """Parse inline formatting within a line."""
+        """Parse inline formatting codes in a line and return Flet controls.
+
+        Args:
+            line (str): The line to parse.
+            state (dict): The current parsing state.
+
+        Returns:
+            list[ft.Control]: Controls for the formatted line.
+
+        """
         spans = []
         current_text = ""
         current_style = {
@@ -113,6 +154,7 @@ class MicronParser:
         skip = 0
 
         def flush_current():
+            """Flush the current text buffer into a span."""
             nonlocal current_text
             if current_text:
                 spans.append(MicronParser._create_span(current_text, current_style))
@@ -166,7 +208,6 @@ class MicronParser:
                     state["align"] = state["default_align"]
                     handled = True
                 elif char == "`":
-                    # End formatting, reset to plain
                     current_style["bold"] = False
                     current_style["underline"] = False
                     current_style["italic"] = False
@@ -180,10 +221,8 @@ class MicronParser:
                     i += 1
                     continue
 
-            # Text mode
             if char == "`":
                 flush_current()
-                # Check for double backtick (reset)
                 if i + 1 < len(line) and line[i + 1] == "`":
                     current_style["bold"] = False
                     current_style["underline"] = False
@@ -193,31 +232,35 @@ class MicronParser:
                     state["align"] = state["default_align"]
                     i += 2
                     continue
-                # Single backtick - enter formatting mode
                 mode = "formatting"
                 i += 1
                 continue
 
-            # Regular character
             current_text += char
             i += 1
 
-        # Flush remaining text
         flush_current()
 
         if spans:
-            # Check if this is ASCII art and scale accordingly
             is_art = MicronParser._is_ascii_art("".join(span.text for span in spans))
             font_size = 12 * self.ascii_art_scale if is_art else None
             return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
-        # Check if this line is ASCII art and scale accordingly
         is_art = MicronParser._is_ascii_art(line)
         font_size = 12 * self.ascii_art_scale if is_art else None
         return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
 
     @staticmethod
     def _create_span(text: str, style: dict) -> ft.TextSpan:
-        """Create a TextSpan with the given style."""
+        """Create a Flet TextSpan with the given style.
+
+        Args:
+            text (str): The text for the span.
+            style (dict): The style dictionary.
+
+        Returns:
+            ft.TextSpan: The styled text span.
+
+        """
         flet_style = ft.TextStyle(
             color=MicronParser._color_to_flet(style["fg"]),
             bgcolor=MicronParser._color_to_flet(style["bg"]),
@@ -228,11 +271,17 @@ class MicronParser:
         return ft.TextSpan(text, flet_style)
 
     def _apply_format_code_to_style(self, code: str, style: dict, state: dict):
-        """Apply formatting code to a style dict."""
+        """Apply a micron format code to a style dictionary.
+
+        Args:
+            code (str): The format code.
+            style (dict): The style dictionary to modify.
+            state (dict): The current parsing state.
+
+        """
         if not code:
             return
 
-        # Reset all formatting
         if code == "`":
             style["bold"] = False
             style["underline"] = False
@@ -241,7 +290,6 @@ class MicronParser:
             style["bg"] = self.DEFAULT_BG
             return
 
-        # Toggle formatting
         if "!" in code:
             style["bold"] = not style["bold"]
         if "_" in code:
@@ -249,24 +297,27 @@ class MicronParser:
         if "*" in code:
             style["italic"] = not style["italic"]
 
-        # Colors
         if code.startswith("F") and len(code) >= 4:
             style["fg"] = code[1:4]
         elif code.startswith("B") and len(code) >= 4:
             style["bg"] = code[1:4]
 
-        # Reset colors
         if "f" in code:
             style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
         if "b" in code:
             style["bg"] = self.DEFAULT_BG
 
     def _apply_format_code(self, code: str, state: dict):
-        """Apply formatting code to state."""
+        """Apply a micron format code to the parsing state.
+
+        Args:
+            code (str): The format code.
+            state (dict): The state dictionary to modify.
+
+        """
         if not code:
             return
 
-        # Reset all formatting
         if code == "`":
             state["formatting"]["bold"] = False
             state["formatting"]["underline"] = False
@@ -276,7 +327,6 @@ class MicronParser:
             state["align"] = state["default_align"]
             return
 
-        # Toggle formatting
         if "!" in code:
             state["formatting"]["bold"] = not state["formatting"]["bold"]
         if "_" in code:
@@ -284,19 +334,16 @@ class MicronParser:
         if "*" in code:
             state["formatting"]["italic"] = not state["formatting"]["italic"]
 
-        # Colors
         if code.startswith("F") and len(code) >= 4:
             state["fg_color"] = code[1:4]
         elif code.startswith("B") and len(code) >= 4:
             state["bg_color"] = code[1:4]
 
-        # Reset colors
         if "f" in code:
             state["fg_color"] = self.SELECTED_STYLES["plain"]["fg"]
         if "b" in code:
             state["bg_color"] = self.DEFAULT_BG
 
-        # Alignment
         if "c" in code:
             state["align"] = "center"
         elif "l" in code:
@@ -307,15 +354,21 @@ class MicronParser:
             state["align"] = state["default_align"]
 
     def _parse_divider(self, line: str, state: dict) -> list[ft.Control]:
-        """Parse divider lines."""
-        if len(line) == 1:
-            # Simple horizontal rule
-            return [ft.Divider()]
-        # Custom divider with repeated character
-        divider_char = line[1] if len(line) > 1 else "-"
-        repeated = divider_char * 80  # Fixed width for now
+        """Parse a divider line and return a Flet Divider or styled Text.
 
-        # Check if divider contains ASCII art
+        Args:
+            line (str): The divider line.
+            state (dict): The current parsing state.
+
+        Returns:
+            list[ft.Control]: Controls for the divider.
+
+        """
+        if len(line) == 1:
+            return [ft.Divider()]
+        divider_char = line[1] if len(line) > 1 else "-"
+        repeated = divider_char * 80
+
         is_art = MicronParser._is_ascii_art(repeated)
         font_size = 12 * self.ascii_art_scale if is_art else None
 
@@ -326,7 +379,7 @@ class MicronParser:
             bgcolor=MicronParser._color_to_flet(state["bg_color"]),
             no_wrap=True,
             overflow=ft.TextOverflow.CLIP,
-            selectable=False,  # Dividers don't need to be selectable
+            selectable=False,
             size=font_size,
         )
 
@@ -334,19 +387,24 @@ class MicronParser:
 
     @staticmethod
     def _color_to_flet(color: str) -> str | None:
-        """Convert micron color format to Flet color format."""
+        """Convert micron color format to Flet color format.
+
+        Args:
+            color (str): The micron color string.
+
+        Returns:
+            str | None: The Flet color string or None if default/invalid.
+
+        """
         if not color or color == "default":
             return None
 
-        # 3-char hex (like "ddd")
-        if len(color) == 3 and all(c in "0123456789abcdefABCDEF" for c in color):
+        if len(color) == 3 and re.match(r"^[0-9a-fA-F]{3}$", color):
             return f"#{color[0]*2}{color[1]*2}{color[2]*2}"
 
-        # 6-char hex
-        if len(color) == 6 and all(c in "0123456789abcdefABCDEF" for c in color):
+        if len(color) == 6 and re.match(r"^[0-9a-fA-F]{6}$", color):
             return f"#{color}"
 
-        # Grayscale format "gXX"
         if len(color) == 3 and color[0] == "g":
             try:
                 val = int(color[1:])
@@ -360,18 +418,23 @@ class MicronParser:
 
     @staticmethod
     def _is_ascii_art(text: str) -> bool:
-        """Detect if text appears to be ASCII art."""
+        """Detect if text appears to be ASCII art.
+
+        Args:
+            text (str): The text to check.
+
+        Returns:
+            bool: True if the text is likely ASCII art, False otherwise.
+
+        """
         if not text or len(text) < 10:
             return False
 
-        # Count special characters that are common in ASCII art
         special_chars = set("│─┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬█▄▀▌▐■□▪▫▲▼◄►◆◇○●◎◢◣◥◤")
         special_count = sum(1 for char in text if char in special_chars or (ord(char) > 127))
 
-        # Also count other non-alphanumeric characters
         other_special = sum(1 for char in text if not char.isalnum() and char not in " \t")
 
-        # Consider it ASCII art if more than 30% special characters
         total_chars = len(text.replace(" ", "").replace("\t", ""))
         if total_chars == 0:
             return False
@@ -380,8 +443,16 @@ class MicronParser:
         return special_ratio > 0.3
 
     def _parse_heading(self, line: str, state: dict) -> list[ft.Control]:
-        """Parse heading lines."""
-        # Count the number of > characters
+        """Parse heading lines (starting with '>') and return styled controls.
+
+        Args:
+            line (str): The heading line.
+            state (dict): The current parsing state.
+
+        Returns:
+            list[ft.Control]: Controls for the heading.
+
+        """
         heading_level = 0
         for char in line:
             if char == ">":
@@ -389,30 +460,40 @@ class MicronParser:
             else:
                 break
 
+        state["depth"] = heading_level
+
         heading_text = line[heading_level:].strip()
 
         if heading_text:
-            # Apply heading style
             style_key = f"heading{min(heading_level, 3)}"
             style = self.SELECTED_STYLES.get(style_key, self.SELECTED_STYLES["plain"])
 
-            # Check if heading contains ASCII art
             is_art = MicronParser._is_ascii_art(heading_text)
             base_size = 20 - heading_level * 2
             font_size = base_size * self.ascii_art_scale if is_art else base_size
 
-            # Create heading control
+            indent_em = max(0, (state["depth"] - 1) * 1.2)
+
             heading = ft.Text(
                 heading_text,
                 style=ft.TextStyle(
                     color=MicronParser._color_to_flet(style["fg"]),
-                    bgcolor=MicronParser._color_to_flet(style["bg"]),
                     weight=ft.FontWeight.BOLD if style["bold"] else ft.FontWeight.NORMAL,
                     size=font_size,
                 ),
                 selectable=True,
                 font_family="monospace",
             )
+
+            bg_color = MicronParser._color_to_flet(style["bg"])
+            if bg_color or indent_em > 0:
+                heading = ft.Container(
+                    content=heading,
+                    bgcolor=bg_color,
+                    width=float("inf"),
+                    padding=ft.padding.symmetric(horizontal=4),
+                    margin=ft.margin.only(left=indent_em * 16) if indent_em > 0 else None,
+                )
 
             return [heading]
 
@@ -429,12 +510,84 @@ def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
     Returns:
         ft.Control: Rendered content as a Flet control.
 
+    This function parses the micron markup, merges adjacent text controls
+    with the same style, and returns a Flet ListView containing the result.
+
     """
     parser = MicronParser(ascii_art_scale=ascii_art_scale)
     controls = parser.convert_micron_to_controls(content)
-    return ft.Column(
-        controls=controls,
+
+    merged_controls = []
+    current_text_parts = []
+    current_style = None
+
+    def flush_text_parts():
+        """Merge and flush the current text parts into a single Flet Text control,
+        if any, and append to merged_controls.
+        """
+        nonlocal current_text_parts, current_style
+        if current_text_parts:
+            combined_text = "\n".join(current_text_parts)
+            if current_style:
+                color, bgcolor, weight, decoration, italic, size, text_align = current_style
+                style = ft.TextStyle(
+                    color=color,
+                    bgcolor=bgcolor,
+                    weight=weight,
+                    decoration=decoration,
+                    italic=italic,
+                    size=size,
+                )
+            else:
+                style = None
+
+            merged_controls.append(ft.Text(
+                combined_text,
+                style=style,
+                text_align=text_align if current_style and text_align else None,
+                selectable=True,
+                font_family="monospace",
+            ))
+            current_text_parts = []
+            current_style = None
+
+    for control in controls:
+        if isinstance(control, ft.Text) and not hasattr(control, "content"):
+            style = control.style or ft.TextStyle()
+            style_key = (
+                getattr(style, "color", None),
+                getattr(style, "bgcolor", None),
+                getattr(style, "weight", None),
+                getattr(style, "decoration", None),
+                getattr(style, "italic", None),
+                getattr(style, "size", None),
+                getattr(control, "text_align", None),
+            )
+
+            text_content = ""
+            if hasattr(control, "_Text__spans") and control._Text__spans:
+                text_content = "".join(span.text for span in control._Text__spans)
+            elif hasattr(control, "_Control__attrs") and "text" in control._Control__attrs:
+                text_content = control._Control__attrs["text"][0]
+            elif hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
+                text_content = control._Control__attrs["value"][0]
+            else:
+                text_content = ""
+
+            if style_key == current_style:
+                current_text_parts.append(text_content)
+            else:
+                flush_text_parts()
+                current_style = style_key
+                current_text_parts = [text_content]
+        else:
+            flush_text_parts()
+            merged_controls.append(control)
+
+    flush_text_parts()
+
+    return ft.ListView(
+        controls=merged_controls,
+        spacing=2,
         expand=True,
-        scroll=ft.ScrollMode.AUTO,
-        spacing=2,  # Small spacing between lines for readability
     )
