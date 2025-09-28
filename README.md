@@ -1,6 +1,9 @@
 # Ren Browser
 
-A browser for the [Reticulum Network](https://reticulum.network/). Work-in-progress.
+A browser for the [Reticulum Network](https://reticulum.network/).
+
+> [!WARNING]  
+> This is a work-in-progress.
 
 Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
 
