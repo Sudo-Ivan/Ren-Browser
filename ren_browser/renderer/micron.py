@@ -36,16 +36,16 @@ class MicronParser:
 
         self.STYLES_DARK = {
             "plain": {"fg": self.DEFAULT_FG_DARK, "bg": self.DEFAULT_BG, "bold": False, "underline": False, "italic": False},
-            "heading1": {"fg": "222", "bg": "bbb", "bold": False, "underline": False, "italic": False},
-            "heading2": {"fg": "111", "bg": "999", "bold": False, "underline": False, "italic": False},
-            "heading3": {"fg": "000", "bg": "777", "bold": False, "underline": False, "italic": False},
+            "heading1": {"fg": "000", "bg": "bbb", "bold": True, "underline": False, "italic": False},
+            "heading2": {"fg": "000", "bg": "999", "bold": True, "underline": False, "italic": False},
+            "heading3": {"fg": "fff", "bg": "777", "bold": True, "underline": False, "italic": False},
         }
 
         self.STYLES_LIGHT = {
             "plain": {"fg": self.DEFAULT_FG_LIGHT, "bg": self.DEFAULT_BG, "bold": False, "underline": False, "italic": False},
-            "heading1": {"fg": "000", "bg": "777", "bold": False, "underline": False, "italic": False},
-            "heading2": {"fg": "111", "bg": "aaa", "bold": False, "underline": False, "italic": False},
-            "heading3": {"fg": "222", "bg": "ccc", "bold": False, "underline": False, "italic": False},
+            "heading1": {"fg": "fff", "bg": "777", "bold": True, "underline": False, "italic": False},
+            "heading2": {"fg": "000", "bg": "aaa", "bold": True, "underline": False, "italic": False},
+            "heading3": {"fg": "000", "bg": "ccc", "bold": True, "underline": False, "italic": False},
         }
 
         if self.dark_theme:
@@ -167,6 +167,25 @@ class MicronParser:
                 continue
 
             char = line[i]
+            """
+            Handle backticks for formatting:
+            - Double backtick (``) resets formatting and alignment.
+            - Single backtick toggles formatting mode.
+            """
+            if char == "`":
+                flush_current()
+                if i + 1 < len(line) and line[i + 1] == "`":
+                    current_style["bold"] = False
+                    current_style["underline"] = False
+                    current_style["italic"] = False
+                    current_style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
+                    current_style["bg"] = self.DEFAULT_BG
+                    state["align"] = state["default_align"]
+                    i += 2
+                    continue
+                mode = "formatting" if mode == "text" else "text"
+                i += 1
+                continue
 
             if mode == "formatting":
                 handled = False
@@ -207,36 +226,12 @@ class MicronParser:
                 elif char == "a":
                     state["align"] = state["default_align"]
                     handled = True
-                elif char == "`":
-                    current_style["bold"] = False
-                    current_style["underline"] = False
-                    current_style["italic"] = False
-                    current_style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
-                    current_style["bg"] = self.DEFAULT_BG
-                    state["align"] = state["default_align"]
-                    mode = "text"
-                    handled = True
 
-                if handled:
-                    i += 1
-                    continue
+                if not handled:
+                    current_text += char
 
-            if char == "`":
-                flush_current()
-                if i + 1 < len(line) and line[i + 1] == "`":
-                    current_style["bold"] = False
-                    current_style["underline"] = False
-                    current_style["italic"] = False
-                    current_style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
-                    current_style["bg"] = self.DEFAULT_BG
-                    state["align"] = state["default_align"]
-                    i += 2
-                    continue
-                mode = "formatting"
-                i += 1
-                continue
-
-            current_text += char
+            else:
+                current_text += char
             i += 1
 
         flush_current()
@@ -486,13 +481,21 @@ class MicronParser:
             )
 
             bg_color = MicronParser._color_to_flet(style["bg"])
-            if bg_color or indent_em > 0:
+            if bg_color:
                 heading = ft.Container(
-                    content=heading,
+                    content=ft.Container(
+                        content=heading,
+                        margin=ft.margin.only(left=indent_em * 16) if indent_em > 0 else None,
+                        padding=ft.padding.symmetric(horizontal=4),
+                    ),
                     bgcolor=bg_color,
                     width=float("inf"),
+                )
+            elif indent_em > 0:
+                heading = ft.Container(
+                    content=heading,
+                    margin=ft.margin.only(left=indent_em * 16),
                     padding=ft.padding.symmetric(horizontal=4),
-                    margin=ft.margin.only(left=indent_em * 16) if indent_em > 0 else None,
                 )
 
             return [heading]
