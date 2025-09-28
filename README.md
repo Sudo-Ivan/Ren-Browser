@@ -29,13 +29,13 @@ poetry install
 ### Desktop
 
 ```bash
-poetry run ren-browser-dev
+poetry run ren-browser
 ```
 
 ### Web
 
 ```bash
-poetry run ren-browser-web-dev
+poetry run ren-browser-web
 ```
 
 ### Mobile
@@ -43,13 +43,13 @@ poetry run ren-browser-web-dev
 **Android**
 
 ```bash
-poetry run ren-browser-android-dev
+poetry run ren-browser-android
 ```
 
 **iOS**
 
 ```bash
-poetry run ren-browser-ios-dev
+poetry run ren-browser-ios
 ```
 
 ### Docker/Podman
