@@ -58,8 +58,8 @@ class TestPlaintextRenderer:
 class TestMicronRenderer:
     """Test cases for the micron renderer.
 
-    The micron renderer parses Micron markup format and returns a Column
-    containing styled Text controls with proper formatting, colors, and layout.
+    The micron renderer parses Micron markup format and returns a ListView
+    containing styled controls with proper formatting, colors, and layout.
     """
 
     def test_render_micron_basic(self):
@@ -67,16 +67,14 @@ class TestMicronRenderer:
         content = "# Heading\n\nSome content"
         result = render_micron(content)
 
-        # Should return a Column containing Text controls
-        assert isinstance(result, ft.Column)
+        # Should return a ListView containing controls
+        assert isinstance(result, ft.ListView)
         assert result.expand is True
-        assert result.scroll == ft.ScrollMode.AUTO
         assert result.spacing == 2
 
-        # Should contain Text controls
+        # Should contain controls
         assert len(result.controls) > 0
         for control in result.controls:
-            assert isinstance(control, ft.Text)
             assert control.selectable is True
             assert control.font_family == "monospace"
 
@@ -85,35 +83,29 @@ class TestMicronRenderer:
         content = ""
         result = render_micron(content)
 
-        # Should return a Column
-        assert isinstance(result, ft.Column)
+        # Should return a ListView
+        assert isinstance(result, ft.ListView)
         assert result.expand is True
-        assert result.scroll == ft.ScrollMode.AUTO
 
-        # May contain empty Text controls
-        for control in result.controls:
-            assert isinstance(control, ft.Text)
+        # May contain empty controls
 
     def test_render_micron_unicode(self):
         """Test micron rendering with Unicode characters."""
         content = "Unicode content: 你好 🌍 αβγ"
         result = render_micron(content)
 
-        # Should return a Column
-        assert isinstance(result, ft.Column)
+        # Should return a ListView
+        assert isinstance(result, ft.ListView)
         assert result.expand is True
-        assert result.scroll == ft.ScrollMode.AUTO
 
         # Should contain Text controls with the content
         assert len(result.controls) > 0
         all_text = ""
         for control in result.controls:
             assert isinstance(control, ft.Text)
-            if hasattr(control, 'value') and control.value:
-                all_text += control.value
-            elif hasattr(control, 'spans') and control.spans:
-                for span in control.spans:
-                    all_text += span.text
+            # Extract text from the merged control
+            if hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
+                all_text += control._Control__attrs["value"][0]
 
         # Should preserve the content
         assert content in all_text
@@ -129,9 +121,9 @@ class TestRendererComparison:
         plaintext_result = render_plaintext(content)
         micron_result = render_micron(content)
 
-        # Plaintext returns Text, Micron returns Column
+        # Plaintext returns Text, Micron returns ListView
         assert isinstance(plaintext_result, ft.Text)
-        assert isinstance(micron_result, ft.Column)
+        assert isinstance(micron_result, ft.ListView)
 
     def test_renderers_preserve_content(self):
         """Test that both renderers preserve the original content."""
@@ -142,16 +134,13 @@ class TestRendererComparison:
 
         assert plaintext_result.value == content
 
-        # For micron result (Column), extract text from controls
+        # For micron result (ListView), extract text from merged controls
         micron_text = ""
         for control in micron_result.controls:
             if isinstance(control, ft.Text):
-                if hasattr(control, 'value') and control.value:
-                    micron_text += control.value + "\n"
-                elif hasattr(control, 'spans') and control.spans:
-                    for span in control.spans:
-                        micron_text += span.text
-                    micron_text += "\n"
+                # Extract text from the merged control
+                if hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
+                    micron_text += control._Control__attrs["value"][0] + "\n"
 
         # Remove trailing newline and compare
         micron_text = micron_text.rstrip("\n")
@@ -169,9 +158,8 @@ class TestRendererComparison:
         assert plaintext_result.font_family == "monospace"
         assert plaintext_result.expand is True
 
-        # For micron result (Column), check properties of contained controls
+        # For micron result (ListView), check properties
         assert micron_result.expand is True
-        assert micron_result.scroll == ft.ScrollMode.AUTO
         assert micron_result.spacing == 2
 
         # Check that all Text controls in the column have the expected properties
