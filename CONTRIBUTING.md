@@ -11,6 +11,8 @@ I welcome all contributions to the project.
 
 ## Project Structure
 
+Last Updated: 2025-09-28
+
 ```
 Ren-Browser/
 ├── ren_browser/                   # Main Python application package
@@ -42,9 +44,14 @@ Ren-Browser/
 ## Rules
 
 1. Be nice to each other.
-2. If you use an AI tool that generates the code, such as a LLM, please indicate that in the PR.
-3. Add or update docstrings and tests if necessary.
-4. Make sure you run the tests before submitting the PR.
+
+## Generative AI Usage
+
+You are allowed to use generative AI tools to help learn and contribute. You do not need to disclose you used a AI tool, although that would help me scrutinize the PR more for bugs, errors or security flaws. 
+
+## Linting, Security and Tests
+
+You are not required to run the linting, security and tests before submitting the PR as those will be run by the CI/CD pipeline.
 
 ## Testing
 
