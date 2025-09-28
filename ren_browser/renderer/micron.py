@@ -8,9 +8,10 @@ import flet as ft
 
 
 class MicronParser:
-    def __init__(self, dark_theme=True, enable_force_monospace=True):
+    def __init__(self, dark_theme=True, enable_force_monospace=True, ascii_art_scale=0.75):
         self.dark_theme = dark_theme
         self.enable_force_monospace = enable_force_monospace
+        self.ascii_art_scale = ascii_art_scale
         self.DEFAULT_FG_DARK = "ddd"
         self.DEFAULT_FG_LIGHT = "222"
         self.DEFAULT_BG = "default"
@@ -205,14 +206,20 @@ class MicronParser:
         flush_current()
 
         if spans:
-            return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace")]
-        return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace")]
+            # Check if this is ASCII art and scale accordingly
+            is_art = self._is_ascii_art("".join(span.text for span in spans))
+            font_size = 12 * self.ascii_art_scale if is_art else None
+            return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
+        # Check if this line is ASCII art and scale accordingly
+        is_art = self._is_ascii_art(line)
+        font_size = 12 * self.ascii_art_scale if is_art else None
+        return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
 
     def _create_span(self, text: str, style: dict) -> ft.TextSpan:
         """Create a TextSpan with the given style."""
         flet_style = ft.TextStyle(
-            color=self._color_to_flet(style["fg"]),
-            bgcolor=self._color_to_flet(style["bg"]),
+            color=MicronParser._color_to_flet(style["fg"]),
+            bgcolor=MicronParser._color_to_flet(style["bg"]),
             weight=ft.FontWeight.BOLD if style["bold"] else ft.FontWeight.NORMAL,
             decoration=ft.TextDecoration.UNDERLINE if style["underline"] else ft.TextDecoration.NONE,
             italic=style["italic"],
@@ -307,19 +314,25 @@ class MicronParser:
         divider_char = line[1] if len(line) > 1 else "-"
         repeated = divider_char * 80  # Fixed width for now
 
+        # Check if divider contains ASCII art
+        is_art = self._is_ascii_art(repeated)
+        font_size = 12 * self.ascii_art_scale if is_art else None
+
         divider = ft.Text(
             repeated,
             font_family="monospace",
-            color=self._color_to_flet(state["fg_color"]),
-            bgcolor=self._color_to_flet(state["bg_color"]),
+            color=MicronParser._color_to_flet(state["fg_color"]),
+            bgcolor=MicronParser._color_to_flet(state["bg_color"]),
             no_wrap=True,
             overflow=ft.TextOverflow.CLIP,
             selectable=False,  # Dividers don't need to be selectable
+            size=font_size,
         )
 
         return [divider]
 
-    def _color_to_flet(self, color: str) -> str | None:
+    @staticmethod
+    def _color_to_flet(color: str) -> str | None:
         """Convert micron color format to Flet color format."""
         if not color or color == "default":
             return None
@@ -344,6 +357,26 @@ class MicronParser:
 
         return None
 
+    def _is_ascii_art(self, text: str) -> bool:
+        """Detect if text appears to be ASCII art."""
+        if not text or len(text) < 10:
+            return False
+
+        # Count special characters that are common in ASCII art
+        special_chars = set("│─┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬█▄▀▌▐■□▪▫▲▼◄►◆◇○●◎◢◣◥◤")
+        special_count = sum(1 for char in text if char in special_chars or (ord(char) > 127))
+
+        # Also count other non-alphanumeric characters
+        other_special = sum(1 for char in text if not char.isalnum() and char not in " \t")
+
+        # Consider it ASCII art if more than 30% special characters
+        total_chars = len(text.replace(" ", "").replace("\t", ""))
+        if total_chars == 0:
+            return False
+
+        special_ratio = (special_count + other_special) / total_chars
+        return special_ratio > 0.3
+
     def _parse_heading(self, line: str, state: dict) -> list[ft.Control]:
         """Parse heading lines."""
         # Count the number of > characters
@@ -361,14 +394,19 @@ class MicronParser:
             style_key = f"heading{min(heading_level, 3)}"
             style = self.SELECTED_STYLES.get(style_key, self.SELECTED_STYLES["plain"])
 
+            # Check if heading contains ASCII art
+            is_art = self._is_ascii_art(heading_text)
+            base_size = 20 - heading_level * 2
+            font_size = base_size * self.ascii_art_scale if is_art else base_size
+
             # Create heading control
             heading = ft.Text(
                 heading_text,
                 style=ft.TextStyle(
-                    color=self._color_to_flet(style["fg"]),
-                    bgcolor=self._color_to_flet(style["bg"]),
+                    color=MicronParser._color_to_flet(style["fg"]),
+                    bgcolor=MicronParser._color_to_flet(style["bg"]),
                     weight=ft.FontWeight.BOLD if style["bold"] else ft.FontWeight.NORMAL,
-                    size=20 - heading_level * 2,  # Smaller size for deeper headings
+                    size=font_size,
                 ),
                 selectable=True,
                 font_family="monospace",
@@ -379,17 +417,18 @@ class MicronParser:
         return []
 
 
-def render_micron(content: str) -> ft.Control:
+def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
     """Render micron markup content to a Flet control.
 
     Args:
         content: Micron markup content to render.
+        ascii_art_scale: Scale factor for ASCII art (0.0-1.0). Default 0.75.
 
     Returns:
         ft.Control: Rendered content as a Flet control.
 
     """
-    parser = MicronParser()
+    parser = MicronParser(ascii_art_scale=ascii_art_scale)
     controls = parser.convert_micron_to_controls(content)
     return ft.Column(
         controls=controls,
