@@ -36,21 +36,23 @@ def open_settings_tab(page: ft.Page, tab_manager):
         try:
             success = storage.save_config(config_field.value)
             if success:
+                print("Config saved successfully. Please restart the app.")
                 page.snack_bar = ft.SnackBar(
                     ft.Text("Config saved successfully. Please restart the app."),
                     open=True,
                 )
             else:
+                print("Error saving config: Storage operation failed")
                 page.snack_bar = ft.SnackBar(
                     ft.Text("Error saving config: Storage operation failed"), open=True
                 )
         except Exception as ex:
+            print(f"Error saving config: {ex}")
             page.snack_bar = ft.SnackBar(
                 ft.Text(f"Error saving config: {ex}"), open=True
             )
-        page.update()
 
-    save_btn = ft.ElevatedButton("Save and Restart", on_click=on_save_config)
+    save_btn = ft.ElevatedButton("Save Config", on_click=on_save_config)
     error_field = ft.TextField(
         label="Error Logs",
         value="",
