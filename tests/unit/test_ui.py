@@ -136,7 +136,7 @@ class TestOpenSettingsTab:
                     for sub_control in control.controls:
                         if (
                             hasattr(sub_control, "text")
-                            and sub_control.text == "Save and Restart"
+                            and sub_control.text == "Save Config"
                         ):
                             save_btn = sub_control
                             break

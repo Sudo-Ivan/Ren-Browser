@@ -80,7 +80,7 @@ class TestStorageManager:
             ):
                 storage = StorageManager()
                 storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/data/data/com.ren_browser/files")
+                expected_dir = Path("/storage/emulated/0/Documents/ren_browser")
                 assert storage._storage_dir == expected_dir
 
     def test_get_config_path(self):
