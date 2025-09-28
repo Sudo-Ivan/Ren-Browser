@@ -115,7 +115,7 @@ class MicronParser:
         def flush_current():
             nonlocal current_text
             if current_text:
-                spans.append(self._create_span(current_text, current_style))
+                spans.append(MicronParser._create_span(current_text, current_style))
                 current_text = ""
 
         while i < len(line):
@@ -207,15 +207,16 @@ class MicronParser:
 
         if spans:
             # Check if this is ASCII art and scale accordingly
-            is_art = self._is_ascii_art("".join(span.text for span in spans))
+            is_art = MicronParser._is_ascii_art("".join(span.text for span in spans))
             font_size = 12 * self.ascii_art_scale if is_art else None
             return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
         # Check if this line is ASCII art and scale accordingly
-        is_art = self._is_ascii_art(line)
+        is_art = MicronParser._is_ascii_art(line)
         font_size = 12 * self.ascii_art_scale if is_art else None
         return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
 
-    def _create_span(self, text: str, style: dict) -> ft.TextSpan:
+    @staticmethod
+    def _create_span(text: str, style: dict) -> ft.TextSpan:
         """Create a TextSpan with the given style."""
         flet_style = ft.TextStyle(
             color=MicronParser._color_to_flet(style["fg"]),
@@ -315,7 +316,7 @@ class MicronParser:
         repeated = divider_char * 80  # Fixed width for now
 
         # Check if divider contains ASCII art
-        is_art = self._is_ascii_art(repeated)
+        is_art = MicronParser._is_ascii_art(repeated)
         font_size = 12 * self.ascii_art_scale if is_art else None
 
         divider = ft.Text(
@@ -357,7 +358,8 @@ class MicronParser:
 
         return None
 
-    def _is_ascii_art(self, text: str) -> bool:
+    @staticmethod
+    def _is_ascii_art(text: str) -> bool:
         """Detect if text appears to be ASCII art."""
         if not text or len(text) < 10:
             return False
@@ -395,7 +397,7 @@ class MicronParser:
             style = self.SELECTED_STYLES.get(style_key, self.SELECTED_STYLES["plain"])
 
             # Check if heading contains ASCII art
-            is_art = self._is_ascii_art(heading_text)
+            is_art = MicronParser._is_ascii_art(heading_text)
             base_size = 20 - heading_level * 2
             font_size = base_size * self.ascii_art_scale if is_art else base_size
 
