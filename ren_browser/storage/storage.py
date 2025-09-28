@@ -37,8 +37,8 @@ class StorageManager:
             pass
 
         if os.name == "posix" and "ANDROID_ROOT" in os.environ:
-            # Android - use app's private files directory
-            storage_dir = pathlib.Path("/data/data/com.ren_browser/files")
+            # Android - use user-accessible external storage
+            storage_dir = pathlib.Path("/storage/emulated/0/Documents/ren_browser")
         elif hasattr(os, "uname") and "iOS" in str(
             getattr(os, "uname", lambda: "")()
         ).replace("iPhone", "iOS"):
