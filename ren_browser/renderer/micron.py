@@ -565,12 +565,10 @@ def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
             )
 
             text_content = ""
-            if hasattr(control, "_Text__spans") and control._Text__spans:
-                text_content = "".join(span.text for span in control._Text__spans)
-            elif hasattr(control, "_Control__attrs") and "text" in control._Control__attrs:
-                text_content = control._Control__attrs["text"][0]
-            elif hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
-                text_content = control._Control__attrs["value"][0]
+            if hasattr(control, "spans") and control.spans:
+                text_content = "".join(span.text for span in control.spans)
+            elif hasattr(control, "value") and control.value:
+                text_content = control.value
             else:
                 text_content = ""
 

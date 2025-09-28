@@ -104,8 +104,8 @@ class TestMicronRenderer:
         for control in result.controls:
             assert isinstance(control, ft.Text)
             # Extract text from the merged control
-            if hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
-                all_text += control._Control__attrs["value"][0]
+            if hasattr(control, "value") and control.value:
+                all_text += control.value
 
         # Should preserve the content
         assert content in all_text
@@ -139,8 +139,8 @@ class TestRendererComparison:
         for control in micron_result.controls:
             if isinstance(control, ft.Text):
                 # Extract text from the merged control
-                if hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
-                    micron_text += control._Control__attrs["value"][0] + "\n"
+                if hasattr(control, "value") and control.value:
+                    micron_text += control.value + "\n"
 
         # Remove trailing newline and compare
         micron_text = micron_text.rstrip("\n")
