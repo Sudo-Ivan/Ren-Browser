@@ -21,14 +21,14 @@ class MicronParser:
             "plain": {"fg": self.DEFAULT_FG_DARK, "bg": self.DEFAULT_BG, "bold": False, "underline": False, "italic": False},
             "heading1": {"fg": "222", "bg": "bbb", "bold": False, "underline": False, "italic": False},
             "heading2": {"fg": "111", "bg": "999", "bold": False, "underline": False, "italic": False},
-            "heading3": {"fg": "000", "bg": "777", "bold": False, "underline": False, "italic": False}
+            "heading3": {"fg": "000", "bg": "777", "bold": False, "underline": False, "italic": False},
         }
 
         self.STYLES_LIGHT = {
             "plain": {"fg": self.DEFAULT_FG_LIGHT, "bg": self.DEFAULT_BG, "bold": False, "underline": False, "italic": False},
             "heading1": {"fg": "000", "bg": "777", "bold": False, "underline": False, "italic": False},
             "heading2": {"fg": "111", "bg": "aaa", "bold": False, "underline": False, "italic": False},
-            "heading3": {"fg": "222", "bg": "ccc", "bold": False, "underline": False, "italic": False}
+            "heading3": {"fg": "222", "bg": "ccc", "bold": False, "underline": False, "italic": False},
         }
 
         if self.dark_theme:
@@ -41,12 +41,12 @@ class MicronParser:
         controls = []
         state = self._init_state()
         lines = markup.split("\n")
-        
+
         for line in lines:
             line_controls = self._parse_line(line, state)
             if line_controls:
                 controls.extend(line_controls)
-        
+
         return controls
 
     def _init_state(self) -> dict:
@@ -69,29 +69,29 @@ class MicronParser:
         """Parse a single line of micron markup."""
         if not line:
             return [ft.Text("", selectable=True, font_family="monospace")]
-        
+
         # Handle literal mode toggle
         if line == "`=":
             state["literal"] = not state["literal"]
             return []
-        
+
         # Handle comments
         if not state["literal"] and line.startswith("#"):
             return []
-        
+
         # Handle section reset
         if not state["literal"] and line.startswith("<"):
             state["depth"] = 0
             return self._parse_line(line[1:], state)
-        
+
         # Handle headings
         if not state["literal"] and line.startswith(">"):
             return self._parse_heading(line, state)
-        
+
         # Handle dividers
         if not state["literal"] and line.startswith("-"):
             return self._parse_divider(line, state)
-        
+
         # Parse inline formatting
         return self._parse_inline_formatting(line, state)
 
@@ -104,7 +104,7 @@ class MicronParser:
             "bg": state["bg_color"],
             "bold": state["formatting"]["bold"],
             "underline": state["formatting"]["underline"],
-            "italic": state["formatting"]["italic"]
+            "italic": state["formatting"]["italic"],
         }
 
         mode = "text"
@@ -127,44 +127,44 @@ class MicronParser:
 
             if mode == "formatting":
                 handled = False
-                if char == '_':
+                if char == "_":
                     current_style["underline"] = not current_style["underline"]
                     handled = True
-                elif char == '!':
+                elif char == "!":
                     current_style["bold"] = not current_style["bold"]
                     handled = True
-                elif char == '*':
+                elif char == "*":
                     current_style["italic"] = not current_style["italic"]
                     handled = True
-                elif char == 'F':
+                elif char == "F":
                     if len(line) >= i + 4:
                         current_style["fg"] = line[i + 1:i + 4]
                         skip = 3
                     handled = True
-                elif char == 'f':
+                elif char == "f":
                     current_style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
                     handled = True
-                elif char == 'B':
+                elif char == "B":
                     if len(line) >= i + 4:
                         current_style["bg"] = line[i + 1:i + 4]
                         skip = 3
                     handled = True
-                elif char == 'b':
+                elif char == "b":
                     current_style["bg"] = self.DEFAULT_BG
                     handled = True
-                elif char == 'c':
+                elif char == "c":
                     state["align"] = "center"
                     handled = True
-                elif char == 'l':
+                elif char == "l":
                     state["align"] = "left"
                     handled = True
-                elif char == 'r':
+                elif char == "r":
                     state["align"] = "right"
                     handled = True
-                elif char == 'a':
+                elif char == "a":
                     state["align"] = state["default_align"]
                     handled = True
-                elif char == '`':
+                elif char == "`":
                     # End formatting, reset to plain
                     current_style["bold"] = False
                     current_style["underline"] = False
@@ -180,10 +180,10 @@ class MicronParser:
                     continue
 
             # Text mode
-            if char == '`':
+            if char == "`":
                 flush_current()
                 # Check for double backtick (reset)
-                if i + 1 < len(line) and line[i + 1] == '`':
+                if i + 1 < len(line) and line[i + 1] == "`":
                     current_style["bold"] = False
                     current_style["underline"] = False
                     current_style["italic"] = False
@@ -192,11 +192,10 @@ class MicronParser:
                     state["align"] = state["default_align"]
                     i += 2
                     continue
-                else:
-                    # Single backtick - enter formatting mode
-                    mode = "formatting"
-                    i += 1
-                    continue
+                # Single backtick - enter formatting mode
+                mode = "formatting"
+                i += 1
+                continue
 
             # Regular character
             current_text += char
@@ -207,8 +206,7 @@ class MicronParser:
 
         if spans:
             return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace")]
-        else:
-            return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace")]
+        return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace")]
 
     def _create_span(self, text: str, style: dict) -> ft.TextSpan:
         """Create a TextSpan with the given style."""
@@ -217,7 +215,7 @@ class MicronParser:
             bgcolor=self._color_to_flet(style["bg"]),
             weight=ft.FontWeight.BOLD if style["bold"] else ft.FontWeight.NORMAL,
             decoration=ft.TextDecoration.UNDERLINE if style["underline"] else ft.TextDecoration.NONE,
-            italic=style["italic"]
+            italic=style["italic"],
         )
         return ft.TextSpan(text, flet_style)
 
@@ -225,7 +223,7 @@ class MicronParser:
         """Apply formatting code to a style dict."""
         if not code:
             return
-        
+
         # Reset all formatting
         if code == "`":
             style["bold"] = False
@@ -234,7 +232,7 @@ class MicronParser:
             style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
             style["bg"] = self.DEFAULT_BG
             return
-        
+
         # Toggle formatting
         if "!" in code:
             style["bold"] = not style["bold"]
@@ -242,13 +240,13 @@ class MicronParser:
             style["underline"] = not style["underline"]
         if "*" in code:
             style["italic"] = not style["italic"]
-        
+
         # Colors
         if code.startswith("F") and len(code) >= 4:
             style["fg"] = code[1:4]
         elif code.startswith("B") and len(code) >= 4:
             style["bg"] = code[1:4]
-        
+
         # Reset colors
         if "f" in code:
             style["fg"] = self.SELECTED_STYLES["plain"]["fg"]
@@ -259,7 +257,7 @@ class MicronParser:
         """Apply formatting code to state."""
         if not code:
             return
-        
+
         # Reset all formatting
         if code == "`":
             state["formatting"]["bold"] = False
@@ -269,7 +267,7 @@ class MicronParser:
             state["bg_color"] = self.DEFAULT_BG
             state["align"] = state["default_align"]
             return
-        
+
         # Toggle formatting
         if "!" in code:
             state["formatting"]["bold"] = not state["formatting"]["bold"]
@@ -277,19 +275,19 @@ class MicronParser:
             state["formatting"]["underline"] = not state["formatting"]["underline"]
         if "*" in code:
             state["formatting"]["italic"] = not state["formatting"]["italic"]
-        
+
         # Colors
         if code.startswith("F") and len(code) >= 4:
             state["fg_color"] = code[1:4]
         elif code.startswith("B") and len(code) >= 4:
             state["bg_color"] = code[1:4]
-        
+
         # Reset colors
         if "f" in code:
             state["fg_color"] = self.SELECTED_STYLES["plain"]["fg"]
         if "b" in code:
             state["bg_color"] = self.DEFAULT_BG
-        
+
         # Alignment
         if "c" in code:
             state["align"] = "center"
@@ -305,38 +303,37 @@ class MicronParser:
         if len(line) == 1:
             # Simple horizontal rule
             return [ft.Divider()]
-        else:
-            # Custom divider with repeated character
-            divider_char = line[1] if len(line) > 1 else "-"
-            repeated = divider_char * 80  # Fixed width for now
-            
-            divider = ft.Text(
-                repeated,
-                font_family="monospace",
-                color=self._color_to_flet(state["fg_color"]),
-                bgcolor=self._color_to_flet(state["bg_color"]),
-                no_wrap=True,
-                overflow=ft.TextOverflow.CLIP,
-                selectable=False  # Dividers don't need to be selectable
-            )
-            
-            return [divider]
+        # Custom divider with repeated character
+        divider_char = line[1] if len(line) > 1 else "-"
+        repeated = divider_char * 80  # Fixed width for now
+
+        divider = ft.Text(
+            repeated,
+            font_family="monospace",
+            color=self._color_to_flet(state["fg_color"]),
+            bgcolor=self._color_to_flet(state["bg_color"]),
+            no_wrap=True,
+            overflow=ft.TextOverflow.CLIP,
+            selectable=False,  # Dividers don't need to be selectable
+        )
+
+        return [divider]
 
     def _color_to_flet(self, color: str) -> str | None:
         """Convert micron color format to Flet color format."""
         if not color or color == "default":
             return None
-        
+
         # 3-char hex (like "ddd")
         if len(color) == 3 and all(c in "0123456789abcdefABCDEF" for c in color):
             return f"#{color[0]*2}{color[1]*2}{color[2]*2}"
-        
+
         # 6-char hex
         if len(color) == 6 and all(c in "0123456789abcdefABCDEF" for c in color):
             return f"#{color}"
-        
+
         # Grayscale format "gXX"
-        if len(color) == 3 and color[0] == 'g':
+        if len(color) == 3 and color[0] == "g":
             try:
                 val = int(color[1:])
                 if 0 <= val <= 99:
@@ -344,7 +341,7 @@ class MicronParser:
                     return f"#{h}{h}{h}"
             except ValueError:
                 pass
-        
+
         return None
 
     def _parse_heading(self, line: str, state: dict) -> list[ft.Control]:
@@ -356,14 +353,14 @@ class MicronParser:
                 heading_level += 1
             else:
                 break
-        
+
         heading_text = line[heading_level:].strip()
-        
+
         if heading_text:
             # Apply heading style
             style_key = f"heading{min(heading_level, 3)}"
             style = self.SELECTED_STYLES.get(style_key, self.SELECTED_STYLES["plain"])
-            
+
             # Create heading control
             heading = ft.Text(
                 heading_text,
@@ -371,14 +368,14 @@ class MicronParser:
                     color=self._color_to_flet(style["fg"]),
                     bgcolor=self._color_to_flet(style["bg"]),
                     weight=ft.FontWeight.BOLD if style["bold"] else ft.FontWeight.NORMAL,
-                    size=20 - heading_level * 2  # Smaller size for deeper headings
+                    size=20 - heading_level * 2,  # Smaller size for deeper headings
                 ),
                 selectable=True,
-                font_family="monospace"
+                font_family="monospace",
             )
-            
+
             return [heading]
-        
+
         return []
 
 
