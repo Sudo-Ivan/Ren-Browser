@@ -239,10 +239,20 @@ class MicronParser:
         if spans:
             is_art = MicronParser._is_ascii_art("".join(span.text for span in spans))
             font_size = 12 * self.ascii_art_scale if is_art else None
-            return [ft.Text(spans=spans, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
-        is_art = MicronParser._is_ascii_art(line)
-        font_size = 12 * self.ascii_art_scale if is_art else None
-        return [ft.Text(line, text_align=state["align"], selectable=True, font_family="monospace", size=font_size)]
+            text_control = ft.Text(spans=spans, text_align=state["align"], selectable=True, enable_interactive_selection=True, expand=True, font_family="monospace", size=font_size)
+        else:
+            is_art = MicronParser._is_ascii_art(line)
+            font_size = 12 * self.ascii_art_scale if is_art else None
+            text_control = ft.Text(line, text_align=state["align"], selectable=True, enable_interactive_selection=True, expand=True, font_family="monospace", size=font_size)
+
+        if state["depth"] > 0:
+            indent_em = (state["depth"] - 1) * 1.2
+            text_control = ft.Container(
+                content=text_control,
+                margin=ft.margin.only(left=indent_em * 16),
+            )
+
+        return [text_control]
 
     @staticmethod
     def _create_span(text: str, style: dict) -> ft.TextSpan:
@@ -375,6 +385,7 @@ class MicronParser:
             no_wrap=True,
             overflow=ft.TextOverflow.CLIP,
             selectable=False,
+            enable_interactive_selection=False,
             size=font_size,
         )
 
@@ -477,6 +488,8 @@ class MicronParser:
                     size=font_size,
                 ),
                 selectable=True,
+                enable_interactive_selection=True,
+                expand=True,
                 font_family="monospace",
             )
 
@@ -547,8 +560,10 @@ def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
             merged_controls.append(ft.Text(
                 combined_text,
                 style=style,
-                text_align=text_align if current_style and text_align else None,
+                text_align=text_align if current_style and text_align else "left",
                 selectable=True,
+                enable_interactive_selection=True,
+                expand=True,
                 font_family="monospace",
             ))
             current_text_parts = []
@@ -587,8 +602,11 @@ def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
 
     flush_text_parts()
 
-    return ft.ListView(
-        controls=merged_controls,
-        spacing=2,
+    return ft.Container(
+        content=ft.ListView(
+            controls=merged_controls,
+            spacing=2,
+            expand=True,
+        ),
         expand=True,
     )

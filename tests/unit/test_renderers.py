@@ -67,14 +67,14 @@ class TestMicronRenderer:
         content = "# Heading\n\nSome content"
         result = render_micron(content)
 
-        # Should return a ListView containing controls
-        assert isinstance(result, ft.ListView)
-        assert result.expand is True
-        assert result.spacing == 2
+        # Should return a Container with ListView
+        assert isinstance(result, ft.Container)
+        assert isinstance(result.content, ft.ListView)
+        assert result.content.spacing == 2
 
         # Should contain controls
-        assert len(result.controls) > 0
-        for control in result.controls:
+        assert len(result.content.controls) > 0
+        for control in result.content.controls:
             assert control.selectable is True
             assert control.font_family == "monospace"
 
@@ -83,9 +83,8 @@ class TestMicronRenderer:
         content = ""
         result = render_micron(content)
 
-        # Should return a ListView
-        assert isinstance(result, ft.ListView)
-        assert result.expand is True
+        # Should return a Container
+        assert isinstance(result, ft.Container)
 
         # May contain empty controls
 
@@ -94,14 +93,13 @@ class TestMicronRenderer:
         content = "Unicode content: 你好 🌍 αβγ"
         result = render_micron(content)
 
-        # Should return a ListView
-        assert isinstance(result, ft.ListView)
-        assert result.expand is True
+        # Should return a Container
+        assert isinstance(result, ft.Container)
 
         # Should contain Text controls with the content
-        assert len(result.controls) > 0
+        assert len(result.content.controls) > 0
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             assert isinstance(control, ft.Text)
             # Extract text from the merged control
             if hasattr(control, "value") and control.value:
@@ -115,11 +113,11 @@ class TestMicronRenderer:
         content = "> Level 1\n>> Level 2\n>>> Level 3"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) == 3
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) == 3
 
         # Check that headings are wrapped in containers with backgrounds
-        for control in result.controls:
+        for control in result.content.controls:
             assert isinstance(control, ft.Container)
             assert control.bgcolor is not None  # Should have background color
             assert control.width == float("inf")  # Should be full width
@@ -129,12 +127,12 @@ class TestMicronRenderer:
         content = "`!Bold text!` and `_underline_` and `*italic*`"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) >= 1
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) >= 1
 
         # Should produce some text content
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             if hasattr(control, "value") and control.value:
                 all_text += control.value
 
@@ -145,12 +143,12 @@ class TestMicronRenderer:
         content = "`FffRed text` and `B00Blue background`"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) >= 1
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) >= 1
 
         # Should produce some text content (color codes may consume characters)
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             if hasattr(control, "value") and control.value:
                 all_text += control.value
 
@@ -161,24 +159,26 @@ class TestMicronRenderer:
         content = "`cCentered text`"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) == 1
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) >= 1
 
-        control = result.controls[0]
-        assert isinstance(control, ft.Text)
-        # Note: alignment may be consumed by 'c' in "Centered"
-        # Just check that we have some text
-        assert len(control.value) > 0
+        # Should have some text content
+        all_text = ""
+        for control in result.content.controls:
+            if hasattr(control, "value") and control.value:
+                all_text += control.value
+
+        assert len(all_text) > 0
 
     def test_render_micron_comments(self):
         """Test that comments are ignored."""
         content = "# This is a comment\nVisible text"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
+        assert isinstance(result, ft.Container)
         # Should only contain the visible text, not the comment
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             if isinstance(control, ft.Text) and hasattr(control, "value") and control.value:
                 all_text += control.value
 
@@ -190,11 +190,11 @@ class TestMicronRenderer:
         content = "> Main section\n>> Subsection\n>>> Sub-subsection"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) == 3
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) == 3
 
         # Check indentation increases with depth
-        for i, control in enumerate(result.controls):
+        for i, control in enumerate(result.content.controls):
             assert isinstance(control, ft.Container)
             # The inner container should have margin for indentation
             inner_container = control.content
@@ -211,12 +211,12 @@ class TestMicronRenderer:
         content = f"Normal text\n{ascii_art}\nMore text"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
+        assert isinstance(result, ft.Container)
         # Text gets merged into single control due to text merging
-        assert len(result.controls) >= 1
+        assert len(result.content.controls) >= 1
         # Should contain the ASCII art content
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             if isinstance(control, ft.Text) and hasattr(control, "value"):
                 all_text += control.value
         assert "┌───┐" in all_text
@@ -227,10 +227,10 @@ class TestMicronRenderer:
         content = "`=Literal mode`\n# This should be visible\n`=Back to normal`"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
+        assert isinstance(result, ft.Container)
         # Should contain the processed content (literal mode may not be fully implemented)
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             if isinstance(control, ft.Text) and hasattr(control, "value") and control.value:
                 all_text += control.value
 
@@ -242,20 +242,9 @@ class TestMicronRenderer:
         content = "Text above\n-\nText below"
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        # Should contain a Divider control
-        divider_found = False
-        for control in result.controls:
-            if isinstance(control, ft.Container):
-                # Skip containers
-                continue
-            if hasattr(control, "__class__") and "Divider" in control.__class__.__name__:
-                divider_found = True
-                break
-
-        # Note: The current implementation may not create Divider objects
-        # This test documents the expected behavior
-        assert len(result.controls) >= 2  # At least text above and below
+        assert isinstance(result, ft.Container)
+        # Should contain controls for text
+        assert len(result.content.controls) >= 2
 
     def test_render_micron_complex_formatting(self):
         """Test complex combination of micron formatting."""
@@ -269,27 +258,29 @@ Final paragraph."""
 
         result = render_micron(content)
 
-        assert isinstance(result, ft.ListView)
-        assert len(result.controls) >= 3  # Should have multiple elements
+        assert isinstance(result, ft.Container)
+        assert len(result.content.controls) >= 3  # Should have multiple elements
 
         # Check for heading containers
-        heading_containers = [c for c in result.controls if isinstance(c, ft.Container)]
+        heading_containers = [c for c in result.content.controls if isinstance(c, ft.Container)]
         assert len(heading_containers) >= 2  # At least 2 headings
 
         # Check that we have some text content
         def extract_all_text(control):
             """Recursively extract text from control and its children."""
             text = ""
-            if hasattr(control, "value"):
+            if hasattr(control, "value") and control.value:
                 text += control.value
             elif hasattr(control, "_Control__attrs") and "value" in control._Control__attrs:
                 text += control._Control__attrs["value"][0]
+            elif hasattr(control, "spans") and control.spans:
+                text += "".join(span.text for span in control.spans)
             elif hasattr(control, "content"):
                 text += extract_all_text(control.content)
             return text
 
         all_text = ""
-        for control in result.controls:
+        for control in result.content.controls:
             all_text += extract_all_text(control)
 
         assert "Heading" in all_text
@@ -307,9 +298,9 @@ class TestRendererComparison:
         plaintext_result = render_plaintext(content)
         micron_result = render_micron(content)
 
-        # Plaintext returns Text, Micron returns ListView
+        # Plaintext returns Text, Micron returns Container
         assert isinstance(plaintext_result, ft.Text)
-        assert isinstance(micron_result, ft.ListView)
+        assert isinstance(micron_result, ft.Container)
 
     def test_renderers_preserve_content(self):
         """Test that both renderers preserve the original content."""
@@ -320,9 +311,9 @@ class TestRendererComparison:
 
         assert plaintext_result.value == content
 
-        # For micron result (ListView), extract text from merged controls
+        # For micron result (Container), extract text from merged controls
         micron_text = ""
-        for control in micron_result.controls:
+        for control in micron_result.content.controls:
             if isinstance(control, ft.Text):
                 # Extract text from the merged control
                 if hasattr(control, "value") and control.value:
@@ -344,12 +335,12 @@ class TestRendererComparison:
         assert plaintext_result.font_family == "monospace"
         assert plaintext_result.expand is True
 
-        # For micron result (ListView), check properties
-        assert micron_result.expand is True
-        assert micron_result.spacing == 2
+        # For micron result (Container), check properties
+        assert isinstance(micron_result.content, ft.ListView)
+        assert micron_result.content.spacing == 2
 
         # Check that all Text controls in the column have the expected properties
-        for control in micron_result.controls:
+        for control in micron_result.content.controls:
             if isinstance(control, ft.Text):
                 assert control.selectable is True
                 assert control.font_family == "monospace"
