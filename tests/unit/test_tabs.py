@@ -34,6 +34,9 @@ class TestTabsManager:
             assert len(manager.manager.tabs) == 1
             assert manager.manager.index == 0
             assert isinstance(manager.tab_bar, ft.Row)
+            assert manager.tab_bar.scroll == ft.ScrollMode.AUTO
+            assert manager.overflow_menu is None
+            assert manager.max_visible_tabs == 8
             assert isinstance(manager.content_container, ft.Container)
 
     def test_tabs_manager_init_micron_renderer(self, mock_page):
@@ -150,7 +153,7 @@ class TestTabsManager:
         """Test that tab bar has correct controls."""
         controls = tabs_manager.tab_bar.controls
 
-        # Should have: home tab, add button, close button
+        # Should have: home tab, add button, close button (and potentially overflow menu)
         assert len(controls) >= 3
         assert isinstance(controls[-2], ft.IconButton)  # Add button
         assert isinstance(controls[-1], ft.IconButton)  # Close button
@@ -233,3 +236,53 @@ class TestTabsManager:
             tabs_manager.content_container.content
             == tabs_manager.manager.tabs[2]["content"]
         )
+
+    def test_overflow_menu_creation(self, tabs_manager):
+        """Test that overflow menu is created when tabs exceed max_visible_tabs."""
+        # Add tabs until we exceed max_visible_tabs (8)
+        for i in range(8):  # Total will be 9 tabs
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
+
+        assert len(tabs_manager.manager.tabs) == 9
+        assert tabs_manager.overflow_menu is not None
+        assert isinstance(tabs_manager.overflow_menu, ft.PopupMenuButton)
+        assert tabs_manager.overflow_menu.icon == ft.Icons.MORE_HORIZ
+
+    def test_overflow_menu_items(self, tabs_manager):
+        """Test that overflow menu contains correct items."""
+        # Add tabs to trigger overflow
+        for i in range(8):  # Total will be 9 tabs
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
+
+        overflow_items = tabs_manager.overflow_menu.items
+        assert len(overflow_items) == 1  # Only the 9th tab should be in overflow
+        assert overflow_items[0].text == "Tab 9"
+
+    def test_overflow_menu_removal(self, tabs_manager):
+        """Test that overflow menu is removed when tabs are reduced."""
+        # Add tabs to trigger overflow
+        for i in range(8):  # Total will be 9 tabs
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
+
+        assert tabs_manager.overflow_menu is not None
+
+        # Remove tabs until we're below the limit
+        for _ in range(2):
+            tabs_manager.select_tab(len(tabs_manager.manager.tabs) - 1)
+            tabs_manager._on_close_click(None)
+
+        assert len(tabs_manager.manager.tabs) == 7
+        assert tabs_manager.overflow_menu is None
+
+    def test_overflow_menu_select_tab(self, tabs_manager):
+        """Test selecting a tab from overflow menu."""
+        # Add tabs to trigger overflow
+        for i in range(8):  # Total will be 9 tabs
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
+
+        # Simulate clicking overflow menu item for tab at index 8
+        overflow_item = tabs_manager.overflow_menu.items[0]
+        # The on_click handler should select tab at index 8
+        overflow_item.on_click(None)  # This should call select_tab(8)
+
+        assert tabs_manager.manager.index == 8

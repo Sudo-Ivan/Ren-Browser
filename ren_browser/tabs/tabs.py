@@ -29,7 +29,12 @@ class TabsManager:
 
         self.page = page
         self.manager = SimpleNamespace(tabs=[], index=0)
-        self.tab_bar = ft.Row(spacing=4)
+        self.tab_bar = ft.Row(
+            spacing=4,
+            scroll=ft.ScrollMode.AUTO
+        )
+        self.overflow_menu = None
+        self.max_visible_tabs = 8
         self.content_container = ft.Container(
             expand=True, bgcolor=ft.Colors.BLACK, padding=ft.padding.all(5)
         )
@@ -46,8 +51,38 @@ class TabsManager:
         self.close_btn = ft.IconButton(
             ft.Icons.CLOSE, tooltip="Close Tab", on_click=self._on_close_click
         )
-        self.tab_bar.controls.extend([self.add_btn, self.close_btn])
+        self.tab_bar.controls.append(self.add_btn)
+        self.tab_bar.controls.append(self.close_btn)
         self.select_tab(0)
+        self._update_overflow()
+
+    def _update_overflow(self):
+        """Update overflow menu based on number of tabs."""
+        tab_count = len(self.manager.tabs)
+
+        if self.overflow_menu and self.overflow_menu in self.tab_bar.controls:
+            self.tab_bar.controls.remove(self.overflow_menu)
+            self.overflow_menu = None
+
+        if tab_count > self.max_visible_tabs:
+            overflow_items = []
+            for i in range(self.max_visible_tabs, tab_count):
+                tab_data = self.manager.tabs[i]
+                overflow_items.append(
+                    ft.PopupMenuItem(
+                        text=tab_data["title"],
+                        on_click=lambda e, idx=i: self.select_tab(idx)
+                    )
+                )
+
+            self.overflow_menu = ft.PopupMenuButton(
+                icon=ft.Icons.MORE_HORIZ,
+                tooltip=f"{tab_count - self.max_visible_tabs} more tabs",
+                items=overflow_items
+            )
+
+            insert_pos = len(self.tab_bar.controls) - 2
+            self.tab_bar.controls.insert(insert_pos, self.overflow_menu)
 
     def _add_tab_internal(self, title: str, content: ft.Control):
         idx = len(self.manager.tabs)
@@ -78,7 +113,7 @@ class TabsManager:
                 "content": tab_content,
             }
         )
-        btn = ft.Container(
+        tab_container = ft.Container(
             content=ft.Text(title),
             on_click=lambda e, i=idx: self.select_tab(i),
             padding=ft.padding.symmetric(horizontal=12, vertical=6),
@@ -86,7 +121,8 @@ class TabsManager:
             bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
         )
         insert_pos = max(0, len(self.tab_bar.controls) - 2)
-        self.tab_bar.controls.insert(insert_pos, btn)
+        self.tab_bar.controls.insert(insert_pos, tab_container)
+        self._update_overflow()
 
     def _on_add_click(self, e):
         title = f"Tab {len(self.manager.tabs) + 1}"
@@ -100,6 +136,7 @@ class TabsManager:
         )
         self._add_tab_internal(title, content)
         self.select_tab(len(self.manager.tabs) - 1)
+        self._update_overflow()
         self.page.update()
 
     def _on_close_click(self, e):
@@ -112,6 +149,7 @@ class TabsManager:
             control.on_click = lambda e, i=i: self.select_tab(i)
         new_idx = min(idx, len(self.manager.tabs) - 1)
         self.select_tab(new_idx)
+        self._update_overflow()
         self.page.update()
 
     def select_tab(self, idx: int):
