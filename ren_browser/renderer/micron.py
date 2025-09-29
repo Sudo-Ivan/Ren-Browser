@@ -533,78 +533,9 @@ def render_micron(content: str, ascii_art_scale: float = 0.75) -> ft.Control:
     parser = MicronParser(ascii_art_scale=ascii_art_scale)
     controls = parser.convert_micron_to_controls(content)
 
-    merged_controls = []
-    current_text_parts = []
-    current_style = None
-
-    def flush_text_parts():
-        """Merge and flush the current text parts into a single Flet Text control,
-        if any, and append to merged_controls.
-        """
-        nonlocal current_text_parts, current_style
-        if current_text_parts:
-            combined_text = "\n".join(current_text_parts)
-            if current_style:
-                color, bgcolor, weight, decoration, italic, size, text_align = current_style
-                style = ft.TextStyle(
-                    color=color,
-                    bgcolor=bgcolor,
-                    weight=weight,
-                    decoration=decoration,
-                    italic=italic,
-                    size=size,
-                )
-            else:
-                style = None
-
-            merged_controls.append(ft.Text(
-                combined_text,
-                style=style,
-                text_align=text_align if current_style and text_align else "left",
-                selectable=True,
-                enable_interactive_selection=True,
-                expand=True,
-                font_family="monospace",
-            ))
-            current_text_parts = []
-            current_style = None
-
-    for control in controls:
-        if isinstance(control, ft.Text) and not hasattr(control, "content"):
-            style = control.style or ft.TextStyle()
-            style_key = (
-                getattr(style, "color", None),
-                getattr(style, "bgcolor", None),
-                getattr(style, "weight", None),
-                getattr(style, "decoration", None),
-                getattr(style, "italic", None),
-                getattr(style, "size", None),
-                getattr(control, "text_align", None),
-            )
-
-            text_content = ""
-            if hasattr(control, "spans") and control.spans:
-                text_content = "".join(span.text for span in control.spans)
-            elif hasattr(control, "value") and control.value:
-                text_content = control.value
-            else:
-                text_content = ""
-
-            if style_key == current_style:
-                current_text_parts.append(text_content)
-            else:
-                flush_text_parts()
-                current_style = style_key
-                current_text_parts = [text_content]
-        else:
-            flush_text_parts()
-            merged_controls.append(control)
-
-    flush_text_parts()
-
     return ft.Container(
         content=ft.ListView(
-            controls=merged_controls,
+            controls=controls,
             spacing=2,
             expand=True,
         ),

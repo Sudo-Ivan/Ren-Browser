@@ -96,16 +96,32 @@ class TestMicronRenderer:
         # Should return a Container
         assert isinstance(result, ft.Container)
 
-        # Should contain Text controls with the content
+        # Should contain controls with the content
         assert len(result.content.controls) > 0
         all_text = ""
         for control in result.content.controls:
-            assert isinstance(control, ft.Text)
-            # Extract text from the merged control
-            if hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                # Extract text from the control
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
+            elif isinstance(control, ft.Container) and hasattr(control, "content"):
+                # Handle indented text controls
+                if isinstance(control.content, ft.Text):
+                    text_content = ""
+                    if hasattr(control.content, "value") and control.content.value:
+                        text_content = control.content.value
+                    elif hasattr(control.content, "spans") and control.content.spans:
+                        text_content = "".join(span.text for span in control.content.spans)
+                    if text_content:
+                        all_text += text_content + "\n"
 
-        # Should preserve the content
+        # Remove trailing newline and should preserve the content
+        all_text = all_text.rstrip("\n")
         assert content in all_text
 
     def test_render_micron_headings(self):
@@ -133,10 +149,16 @@ class TestMicronRenderer:
         # Should produce some text content
         all_text = ""
         for control in result.content.controls:
-            if hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
 
-        assert len(all_text) > 0  # Should have some processed content
+        assert len(all_text.strip()) > 0  # Should have some processed content
 
     def test_render_micron_colors(self):
         """Test micron rendering with color codes."""
@@ -149,10 +171,16 @@ class TestMicronRenderer:
         # Should produce some text content (color codes may consume characters)
         all_text = ""
         for control in result.content.controls:
-            if hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
 
-        assert len(all_text) > 0  # Should have some processed content
+        assert len(all_text.strip()) > 0  # Should have some processed content
 
     def test_render_micron_alignment(self):
         """Test micron rendering with alignment."""
@@ -165,10 +193,16 @@ class TestMicronRenderer:
         # Should have some text content
         all_text = ""
         for control in result.content.controls:
-            if hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
 
-        assert len(all_text) > 0
+        assert len(all_text.strip()) > 0
 
     def test_render_micron_comments(self):
         """Test that comments are ignored."""
@@ -179,9 +213,16 @@ class TestMicronRenderer:
         # Should only contain the visible text, not the comment
         all_text = ""
         for control in result.content.controls:
-            if isinstance(control, ft.Text) and hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
 
+        all_text = all_text.strip()
         assert "Visible text" in all_text
         assert "This is a comment" not in all_text
 
@@ -212,13 +253,20 @@ class TestMicronRenderer:
         result = render_micron(content)
 
         assert isinstance(result, ft.Container)
-        # Text gets merged into single control due to text merging
-        assert len(result.content.controls) >= 1
+        # Each line is kept as separate control
+        assert len(result.content.controls) >= 3
         # Should contain the ASCII art content
         all_text = ""
         for control in result.content.controls:
-            if isinstance(control, ft.Text) and hasattr(control, "value"):
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
+        all_text = all_text.strip()
         assert "┌───┐" in all_text
         assert "Normal text" in all_text
 
@@ -231,8 +279,14 @@ class TestMicronRenderer:
         # Should contain the processed content (literal mode may not be fully implemented)
         all_text = ""
         for control in result.content.controls:
-            if isinstance(control, ft.Text) and hasattr(control, "value") and control.value:
-                all_text += control.value
+            if isinstance(control, ft.Text):
+                text_content = ""
+                if hasattr(control, "value") and control.value:
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    all_text += text_content + "\n"
 
         # At minimum, should contain some text content
         assert len(all_text.strip()) > 0
@@ -311,13 +365,28 @@ class TestRendererComparison:
 
         assert plaintext_result.value == content
 
-        # For micron result (Container), extract text from merged controls
+        # For micron result (Container), extract text from controls
         micron_text = ""
         for control in micron_result.content.controls:
             if isinstance(control, ft.Text):
-                # Extract text from the merged control
+                # Extract text from the control
+                text_content = ""
                 if hasattr(control, "value") and control.value:
-                    micron_text += control.value + "\n"
+                    text_content = control.value
+                elif hasattr(control, "spans") and control.spans:
+                    text_content = "".join(span.text for span in control.spans)
+                if text_content:
+                    micron_text += text_content + "\n"
+            elif isinstance(control, ft.Container) and hasattr(control, "content"):
+                # Handle indented text controls
+                if isinstance(control.content, ft.Text):
+                    text_content = ""
+                    if hasattr(control.content, "value") and control.content.value:
+                        text_content = control.content.value
+                    elif hasattr(control.content, "spans") and control.content.spans:
+                        text_content = "".join(span.text for span in control.content.spans)
+                    if text_content:
+                        micron_text += text_content + "\n"
 
         # Remove trailing newline and compare
         micron_text = micron_text.rstrip("\n")
@@ -339,7 +408,7 @@ class TestRendererComparison:
         assert isinstance(micron_result.content, ft.ListView)
         assert micron_result.content.spacing == 2
 
-        # Check that all Text controls in the column have the expected properties
+        # Check that all Text controls in the ListView have the expected properties
         for control in micron_result.content.controls:
             if isinstance(control, ft.Text):
                 assert control.selectable is True
