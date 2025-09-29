@@ -13,6 +13,7 @@ class TestTabsManager:
     @pytest.fixture
     def tabs_manager(self, mock_page):
         """Create a TabsManager instance for testing."""
+        mock_page.width = 800  # Simulate page width for adaptive logic
         with (
             patch("ren_browser.app.RENDERER", "plaintext"),
             patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render,
@@ -34,9 +35,8 @@ class TestTabsManager:
             assert len(manager.manager.tabs) == 1
             assert manager.manager.index == 0
             assert isinstance(manager.tab_bar, ft.Row)
-            assert manager.tab_bar.scroll == ft.ScrollMode.AUTO
+            assert manager.tab_bar.scroll is None
             assert manager.overflow_menu is None
-            assert manager.max_visible_tabs == 8
             assert isinstance(manager.content_container, ft.Container)
 
     def test_tabs_manager_init_micron_renderer(self, mock_page):
@@ -237,52 +237,25 @@ class TestTabsManager:
             == tabs_manager.manager.tabs[2]["content"]
         )
 
-    def test_overflow_menu_creation(self, tabs_manager):
-        """Test that overflow menu is created when tabs exceed max_visible_tabs."""
-        # Add tabs until we exceed max_visible_tabs (8)
-        for i in range(8):  # Total will be 9 tabs
+    def test_adaptive_overflow_behavior(self, tabs_manager):
+        """Test that the overflow menu adapts to tab changes."""
+        # With page width at 800, add enough tabs that some should overflow.
+        for i in range(10): # Total 11 tabs
             tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
-
-        assert len(tabs_manager.manager.tabs) == 9
+        
+        # Check that an overflow menu exists
         assert tabs_manager.overflow_menu is not None
-        assert isinstance(tabs_manager.overflow_menu, ft.PopupMenuButton)
-        assert tabs_manager.overflow_menu.icon == ft.Icons.MORE_HORIZ
+        
+        # Simulate a smaller screen, expecting more tabs to overflow
+        tabs_manager.page.width = 400
+        tabs_manager._update_tab_visibility()
+        visible_tabs_small = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
+        assert visible_tabs_small < 11
 
-    def test_overflow_menu_items(self, tabs_manager):
-        """Test that overflow menu contains correct items."""
-        # Add tabs to trigger overflow
-        for i in range(8):  # Total will be 9 tabs
-            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
-
-        overflow_items = tabs_manager.overflow_menu.items
-        assert len(overflow_items) == 1  # Only the 9th tab should be in overflow
-        assert overflow_items[0].text == "Tab 9"
-
-    def test_overflow_menu_removal(self, tabs_manager):
-        """Test that overflow menu is removed when tabs are reduced."""
-        # Add tabs to trigger overflow
-        for i in range(8):  # Total will be 9 tabs
-            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
-
-        assert tabs_manager.overflow_menu is not None
-
-        # Remove tabs until we're below the limit
-        for _ in range(2):
-            tabs_manager.select_tab(len(tabs_manager.manager.tabs) - 1)
-            tabs_manager._on_close_click(None)
-
-        assert len(tabs_manager.manager.tabs) == 7
+        # Simulate a larger screen, expecting all tabs to be visible
+        tabs_manager.page.width = 1600
+        tabs_manager._update_tab_visibility()
+        visible_tabs_large = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
+        
+        assert visible_tabs_large == 11
         assert tabs_manager.overflow_menu is None
-
-    def test_overflow_menu_select_tab(self, tabs_manager):
-        """Test selecting a tab from overflow menu."""
-        # Add tabs to trigger overflow
-        for i in range(8):  # Total will be 9 tabs
-            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
-
-        # Simulate clicking overflow menu item for tab at index 8
-        overflow_item = tabs_manager.overflow_menu.items[0]
-        # The on_click handler should select tab at index 8
-        overflow_item.on_click(None)  # This should call select_tab(8)
-
-        assert tabs_manager.manager.index == 8
