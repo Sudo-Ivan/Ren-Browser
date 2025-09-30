@@ -13,6 +13,7 @@ class TestTabsManager:
     @pytest.fixture
     def tabs_manager(self, mock_page):
         """Create a TabsManager instance for testing."""
+        mock_page.width = 800  # Simulate page width for adaptive logic
         with (
             patch("ren_browser.app.RENDERER", "plaintext"),
             patch("ren_browser.renderer.plaintext.render_plaintext") as mock_render,
@@ -34,6 +35,8 @@ class TestTabsManager:
             assert len(manager.manager.tabs) == 1
             assert manager.manager.index == 0
             assert isinstance(manager.tab_bar, ft.Row)
+            assert manager.tab_bar.scroll is None
+            assert manager.overflow_menu is None
             assert isinstance(manager.content_container, ft.Container)
 
     def test_tabs_manager_init_micron_renderer(self, mock_page):
@@ -150,7 +153,7 @@ class TestTabsManager:
         """Test that tab bar has correct controls."""
         controls = tabs_manager.tab_bar.controls
 
-        # Should have: home tab, add button, close button
+        # Should have: home tab, add button, close button (and potentially overflow menu)
         assert len(controls) >= 3
         assert isinstance(controls[-2], ft.IconButton)  # Add button
         assert isinstance(controls[-1], ft.IconButton)  # Close button
@@ -233,3 +236,26 @@ class TestTabsManager:
             tabs_manager.content_container.content
             == tabs_manager.manager.tabs[2]["content"]
         )
+
+    def test_adaptive_overflow_behavior(self, tabs_manager):
+        """Test that the overflow menu adapts to tab changes."""
+        # With page width at 800, add enough tabs that some should overflow.
+        for i in range(10): # Total 11 tabs
+            tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
+        
+        # Check that an overflow menu exists
+        assert tabs_manager.overflow_menu is not None
+        
+        # Simulate a smaller screen, expecting more tabs to overflow
+        tabs_manager.page.width = 400
+        tabs_manager._update_tab_visibility()
+        visible_tabs_small = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
+        assert visible_tabs_small < 11
+
+        # Simulate a larger screen, expecting all tabs to be visible
+        tabs_manager.page.width = 1600
+        tabs_manager._update_tab_visibility()
+        visible_tabs_large = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
+        
+        assert visible_tabs_large == 11
+        assert tabs_manager.overflow_menu is None
