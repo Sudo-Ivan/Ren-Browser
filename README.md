@@ -3,7 +3,7 @@
 A browser for the [Reticulum Network](https://reticulum.network/).
 
 > [!WARNING]  
-> This is a work-in-progress.
+> This is a work-in-progress. In the meantime check out [rBrowser](https://github.com/fr33n0w/rBrowser)
 
 Target platforms: Web, Linux, Windows, MacOS, Android, iOS.
 
