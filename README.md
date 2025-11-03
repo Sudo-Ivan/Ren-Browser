@@ -34,9 +34,6 @@ uv sync
 ```bash
 # From local development
 uv run ren-browser
-
-# Or run directly from GitHub
-uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser
 ```
 
 ### Web
@@ -44,9 +41,6 @@ uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser
 ```bash
 # From local development
 uv run ren-browser-web
-
-# Or run directly from GitHub
-uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser-web
 ```
 
 ### Mobile
@@ -56,9 +50,6 @@ uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser-web
 ```bash
 # From local development
 uv run ren-browser-android
-
-# Or run directly from GitHub
-uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser-android
 ```
 
 **iOS**
@@ -66,9 +57,19 @@ uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser-android
 ```bash
 # From local development
 uv run ren-browser-ios
+```
 
-# Or run directly from GitHub
-uvx git+https://github.com/Sudo-Ivan/Ren-Browser.git -- ren-browser-ios
+To run directly from the GitHub repository without cloning:
+
+```bash
+# Using uvx (temporary environment)
+uvx --from git+https://github.com/Sudo-Ivan/Ren-Browser.git ren-browser-web
+
+# Or clone and run locally
+git clone https://github.com/Sudo-Ivan/Ren-Browser.git
+cd Ren-Browser
+uv sync
+uv run ren-browser-web
 ```
 
 ### Docker/Podman
