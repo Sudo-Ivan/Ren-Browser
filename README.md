@@ -21,24 +21,26 @@ Built using [Flet](https://flet.dev/).
 - Python 3.13+
 - Flet
 - Reticulum 1.0.0+
-- Poetry
+- UV
 
 **Setup**
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### Desktop
 
 ```bash
-poetry run ren-browser
+# From local development
+uv run ren-browser
 ```
 
 ### Web
 
 ```bash
-poetry run ren-browser-web
+# From local development
+uv run ren-browser-web
 ```
 
 ### Mobile
@@ -46,13 +48,28 @@ poetry run ren-browser-web
 **Android**
 
 ```bash
-poetry run ren-browser-android
+# From local development
+uv run ren-browser-android
 ```
 
 **iOS**
 
 ```bash
-poetry run ren-browser-ios
+# From local development
+uv run ren-browser-ios
+```
+
+To run directly from the GitHub repository without cloning:
+
+```bash
+# Using uvx (temporary environment)
+uvx --from git+https://github.com/Sudo-Ivan/Ren-Browser.git ren-browser-web
+
+# Or clone and run locally
+git clone https://github.com/Sudo-Ivan/Ren-Browser.git
+cd Ren-Browser
+uv sync
+uv run ren-browser-web
 ```
 
 ### Docker/Podman
@@ -67,11 +84,11 @@ docker run -p 8550:8550 -v ./config:/app/config ren-browser
 ### Linux
 
 ```bash
-poetry run flet build linux
+uv run flet build linux
 ```
 
 ### Android
 
 ```bash
-poetry run flet build android
+uv run flet build android
 ```
