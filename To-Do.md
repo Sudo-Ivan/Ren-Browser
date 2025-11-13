@@ -2,7 +2,8 @@
 
 ## Bugs
 
-- [ ] Test Config Saving on Android. In my testing and also reported via Email.
+- [ ] Fix Docker 
+- [ ] Test Config Saving on Android.
 - [ ] Fix persisting app state in background on Android. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
 - [ ] Fix tabs dragging/reordering and overflow issues. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
 
