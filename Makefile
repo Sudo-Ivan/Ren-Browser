@@ -1,5 +1,5 @@
 # Ren Browser Makefile
-.PHONY: help build poetry-build linux apk docker-build docker-build-multi docker-run docker-stop clean test lint format
+.PHONY: help build poetry-build linux apk docker-build docker-build-multi docker-run docker-stop docker-compose-up docker-compose-down clean test lint format
 
 # Default target
 help:
@@ -14,6 +14,8 @@ help:
 	@echo "  docker-build-multi - Build multi-platform Docker image"
 	@echo "  docker-run         - Run Docker container"
 	@echo "  docker-stop        - Stop Docker container"
+	@echo "  docker-compose-up  - Start production compose stack"
+	@echo "  docker-compose-down- Stop production compose stack"
 	@echo "  test               - Run tests"
 	@echo "  lint               - Run linter"
 	@echo "  format             - Format code"
@@ -41,11 +43,11 @@ apk:
 # Docker targets
 docker-build:
 	@echo "Building Docker image with Buildx..."
-	docker buildx build -t ren-browser --load .
+	docker buildx build -t ren-browser --load -f docker/Dockerfile .
 
 docker-build-multi:
 	@echo "Building multi-platform Docker image..."
-	docker buildx build -t ren-browser-multi --platform linux/amd64,linux/arm64 --push .
+	docker buildx build -t ren-browser-multi --platform linux/amd64,linux/arm64 -f docker/Dockerfile --push .
 
 docker-run:
 	@echo "Running Docker container..."
@@ -55,6 +57,15 @@ docker-stop:
 	@echo "Stopping Docker container..."
 	docker stop ren-browser-container || true
 	docker rm ren-browser-container || true
+
+# Docker Compose targets
+docker-compose-up:
+	@echo "Starting production Docker Compose stack..."
+	docker-compose -f docker/compose.yml up -d
+
+docker-compose-down:
+	@echo "Stopping production Docker Compose stack..."
+	docker-compose -f docker/compose.yml down
 
 # Development targets
 test:
