@@ -19,6 +19,8 @@ COPY ren_browser ./ren_browser
 
 RUN poetry install --no-interaction --no-ansi --no-cache
 
+RUN chown -R 1000:1000 /app/.venv
+
 ENV PATH="/app/.venv/bin:$PATH"
 ENV FLET_WEB_PORT=8550
 ENV FLET_WEB_HOST=0.0.0.0
