@@ -120,10 +120,10 @@ poetry run flet build linux
 
 Using UV:
 ```bash
-uv run flet build android
+uv run flet build apk
 ```
 
 Using Poetry:
 ```bash
-poetry run flet build android
+poetry run flet build apk
 ```
