@@ -105,7 +105,9 @@ class TestTabsManager:
         """Test that selecting a tab updates background colors correctly."""
         tabs_manager._add_tab_internal("Tab 2", Mock())
 
-        tab_controls = tabs_manager.tab_bar.content.controls[:-2]  # Exclude add/close buttons
+        tab_controls = tabs_manager.tab_bar.content.controls[
+            :-2
+        ]  # Exclude add/close buttons
 
         tabs_manager.select_tab(1)
 
@@ -195,7 +197,9 @@ class TestTabsManager:
         """Test that tab click handlers are properly set."""
         tabs_manager._add_tab_internal("Tab 2", Mock())
 
-        tab_controls = tabs_manager.tab_bar.content.controls[:-2]  # Exclude add/close buttons
+        tab_controls = tabs_manager.tab_bar.content.controls[
+            :-2
+        ]  # Exclude add/close buttons
 
         for i, control in enumerate(tab_controls):
             assert control.on_click is not None
@@ -240,7 +244,7 @@ class TestTabsManager:
     def test_adaptive_overflow_behavior(self, tabs_manager):
         """Test that the overflow menu adapts to tab changes."""
         # With page width at 800, add enough tabs that some should overflow.
-        for i in range(10): # Total 11 tabs
+        for i in range(10):  # Total 11 tabs
             tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
 
         # Check that an overflow menu exists
@@ -249,13 +253,21 @@ class TestTabsManager:
         # Simulate a smaller screen, expecting more tabs to overflow
         tabs_manager.page.width = 400
         tabs_manager._update_tab_visibility()
-        visible_tabs_small = sum(1 for c in tabs_manager.tab_bar.content.controls if isinstance(c, ft.Container) and c.visible)
+        visible_tabs_small = sum(
+            1
+            for c in tabs_manager.tab_bar.content.controls
+            if isinstance(c, ft.Container) and c.visible
+        )
         assert visible_tabs_small < 11
 
         # Simulate a larger screen, expecting all tabs to be visible
         tabs_manager.page.width = 1600
         tabs_manager._update_tab_visibility()
-        visible_tabs_large = sum(1 for c in tabs_manager.tab_bar.content.controls if isinstance(c, ft.Container) and c.visible)
+        visible_tabs_large = sum(
+            1
+            for c in tabs_manager.tab_bar.content.controls
+            if isinstance(c, ft.Container) and c.visible
+        )
 
         assert visible_tabs_large == 11
         assert tabs_manager.overflow_menu is None

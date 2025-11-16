@@ -7,7 +7,8 @@ class TestPageRequest:
     def test_page_request_creation(self):
         """Test basic PageRequest creation."""
         request = PageRequest(
-            destination_hash="1234567890abcdef", page_path="/page/index.mu",
+            destination_hash="1234567890abcdef",
+            page_path="/page/index.mu",
         )
 
         assert request.destination_hash == "1234567890abcdef"

@@ -32,10 +32,10 @@ class TabsManager:
         self.page = page
         self.page.on_resize = self._on_resize
         self.manager = SimpleNamespace(tabs=[], index=0)
-        
+
         storage = get_storage_manager(page)
         self.settings = storage.load_app_settings()
-        
+
         self.tab_bar = ft.Container(
             content=ft.Row(
                 spacing=6,
@@ -60,7 +60,9 @@ class TabsManager:
                 self._on_tab_go(None, 0)
 
         default_content = (
-            render_micron("Welcome to Ren Browser", on_link_click=handle_link_click_home)
+            render_micron(
+                "Welcome to Ren Browser", on_link_click=handle_link_click_home
+            )
             if app_module.RENDERER == "micron"
             else render_plaintext("Welcome to Ren Browser")
         )
@@ -96,16 +98,16 @@ class TabsManager:
         self.settings = settings
         bgcolor = settings.get("page_bgcolor", "#000000")
         self.content_container.bgcolor = bgcolor
-        
+
         horizontal_scroll = settings.get("horizontal_scroll", False)
         scroll_mode = ft.ScrollMode.ALWAYS if horizontal_scroll else ft.ScrollMode.AUTO
-        
+
         for tab in self.manager.tabs:
             if "content" in tab and hasattr(tab["content"], "scroll"):
                 tab["content"].scroll = scroll_mode
             if "content_control" in tab and hasattr(tab["content_control"], "scroll"):
                 tab["content_control"].scroll = scroll_mode
-        
+
         if self.content_container.content:
             self.content_container.content.update()
         self.page.update()
@@ -127,7 +129,9 @@ class TabsManager:
         cumulative_width = 0
         visible_tabs_count = 0
 
-        tab_containers = [c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)]
+        tab_containers = [
+            c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)
+        ]
 
         for i, tab in enumerate(self.manager.tabs):
             estimated_width = len(tab["title"]) * 10 + 32 + self.tab_bar.content.spacing
@@ -183,7 +187,7 @@ class TabsManager:
         content_control = content
         horizontal_scroll = self.settings.get("horizontal_scroll", False)
         scroll_mode = ft.ScrollMode.ALWAYS if horizontal_scroll else ft.ScrollMode.AUTO
-        
+
         tab_content = ft.Column(
             expand=True,
             scroll=scroll_mode,
@@ -254,13 +258,17 @@ class TabsManager:
             return
         idx = self.manager.index
 
-        tab_containers = [c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)]
+        tab_containers = [
+            c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)
+        ]
         control_to_remove = tab_containers[idx]
 
         self.manager.tabs.pop(idx)
         self.tab_bar.content.controls.remove(control_to_remove)
 
-        updated_tab_containers = [c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)]
+        updated_tab_containers = [
+            c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)
+        ]
         for i, control in enumerate(updated_tab_containers):
             control.on_click = lambda e, i=i: self.select_tab(i)  # type: ignore
 
@@ -278,7 +286,9 @@ class TabsManager:
         """
         self.manager.index = idx
 
-        tab_containers = [c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)]
+        tab_containers = [
+            c for c in self.tab_bar.content.controls if isinstance(c, ft.Container)
+        ]
         for i, control in enumerate(tab_containers):
             if i == idx:
                 control.bgcolor = ft.Colors.BLUE_900
@@ -296,7 +306,7 @@ class TabsManager:
         url = tab["url_field"].value.strip()
         if not url:
             return
-        
+
         placeholder_text = f"Loading content for {url}..."
         import ren_browser.app as app_module
 
@@ -330,12 +340,12 @@ class TabsManager:
         def fetch_and_update():
             parts = url.split(":", 1)
             if len(parts) != 2:
-                result = f"Error: Invalid URL format. Expected format: hash:/page/path"
+                result = "Error: Invalid URL format. Expected format: hash:/page/path"
                 page_path = ""
             else:
                 dest_hash = parts[0]
                 page_path = parts[1] if parts[1].startswith("/") else f"/{parts[1]}"
-                
+
                 req = PageRequest(destination_hash=dest_hash, page_path=page_path)
                 page_fetcher = PageFetcher()
                 try:
@@ -343,7 +353,7 @@ class TabsManager:
                 except Exception as ex:
                     app_module.log_error(str(ex))
                     result = f"Error: {ex}"
-            
+
             try:
                 tab = self.manager.tabs[idx]
             except IndexError:
@@ -353,7 +363,7 @@ class TabsManager:
                 new_control = render_micron(result, on_link_click=handle_link_click)
             else:
                 new_control = render_plaintext(result)
-            
+
             tab["content_control"] = new_control
             tab["content"].controls[0] = new_control
             if self.manager.index == idx:

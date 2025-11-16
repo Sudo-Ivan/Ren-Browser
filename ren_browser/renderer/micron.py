@@ -22,7 +22,7 @@ def hex_to_rgb(hex_color: str) -> str:
 
 def parse_micron_line(line: str) -> list:
     """Parse a single line of micron markup into styled text spans.
-    
+
     Returns list of dicts with 'text', 'bold', 'italic', 'underline', 'color', 'bgcolor'.
     """
     spans = []
@@ -37,14 +37,16 @@ def parse_micron_line(line: str) -> list:
     while i < len(line):
         if line[i] == "`" and i + 1 < len(line):
             if current_text:
-                spans.append({
-                    "text": current_text,
-                    "bold": bold,
-                    "italic": italic,
-                    "underline": underline,
-                    "color": color,
-                    "bgcolor": bgcolor,
-                })
+                spans.append(
+                    {
+                        "text": current_text,
+                        "bold": bold,
+                        "italic": italic,
+                        "underline": underline,
+                        "color": color,
+                        "bgcolor": bgcolor,
+                    }
+                )
                 current_text = ""
 
             tag = line[i + 1]
@@ -59,13 +61,13 @@ def parse_micron_line(line: str) -> list:
                 underline = not underline
                 i += 2
             elif tag == "F" and i + 5 <= len(line):
-                color = hex_to_rgb(line[i+2:i+5])
+                color = hex_to_rgb(line[i + 2 : i + 5])
                 i += 5
             elif tag == "f":
                 color = None
                 i += 2
             elif tag == "B" and i + 5 <= len(line):
-                bgcolor = hex_to_rgb(line[i+2:i+5])
+                bgcolor = hex_to_rgb(line[i + 2 : i + 5])
                 i += 5
             elif tag == "b":
                 bgcolor = None
@@ -85,21 +87,23 @@ def parse_micron_line(line: str) -> list:
             i += 1
 
     if current_text:
-        spans.append({
-            "text": current_text,
-            "bold": bold,
-            "italic": italic,
-            "underline": underline,
-            "color": color,
-            "bgcolor": bgcolor,
-        })
+        spans.append(
+            {
+                "text": current_text,
+                "bold": bold,
+                "italic": italic,
+                "underline": underline,
+                "color": color,
+                "bgcolor": bgcolor,
+            }
+        )
 
     return spans
 
 
 def render_micron(content: str, on_link_click=None) -> ft.Control:
     """Render micron markup content to a Flet control.
-    
+
     Falls back to plaintext renderer if parsing fails.
 
     Args:
@@ -119,7 +123,7 @@ def render_micron(content: str, on_link_click=None) -> ft.Control:
 
 def _render_micron_internal(content: str, on_link_click=None) -> ft.Control:
     """Internal micron rendering implementation.
-    
+
     Args:
         content: Micron markup content to render.
         on_link_click: Optional callback function(url) called when a link is clicked.
@@ -186,23 +190,23 @@ def _render_micron_internal(content: str, on_link_click=None) -> ft.Control:
 
         if "`[" in line:
             row_controls = []
-            remaining = line
             last_end = 0
-            
+
             for link_match in re.finditer(r"`\[([^`]*)`([^\]]*)\]", line):
-                before = line[last_end:link_match.start()]
+                before = line[last_end : link_match.start()]
                 if before:
                     before_spans = parse_micron_line(before)
                     for span in before_spans:
                         row_controls.append(create_text_span(span))
-                
+
                 label = link_match.group(1)
                 url = link_match.group(2)
-                
+
                 def make_link_handler(link_url):
                     def handler(e):
                         if on_link_click:
                             on_link_click(link_url)
+
                     return handler
 
                 row_controls.append(
@@ -215,9 +219,9 @@ def _render_micron_internal(content: str, on_link_click=None) -> ft.Control:
                         on_click=make_link_handler(url),
                     ),
                 )
-                
+
                 last_end = link_match.end()
-            
+
             after = line[last_end:]
             if after:
                 after_spans = parse_micron_line(after)

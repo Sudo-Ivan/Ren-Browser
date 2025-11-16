@@ -93,40 +93,41 @@ async def main(page: Page):
 
 def reload_reticulum(page: Page, on_complete=None):
     """Hot reload Reticulum with updated configuration.
-    
+
     Args:
         page: Flet page instance
         on_complete: Optional callback to run when reload is complete
-    
+
     """
+
     def reload_thread():
         import time
-        
+
         try:
             global RNS_INSTANCE
-            
+
             if RNS_INSTANCE:
                 try:
                     RNS_INSTANCE.exit_handler()
                     print("RNS exit handler completed")
                 except Exception as e:
                     print(f"Warning during RNS shutdown: {e}")
-                
+
                 RNS.Reticulum._Reticulum__instance = None
-                
+
                 RNS.Transport.destinations = []
-                
+
                 RNS_INSTANCE = None
                 print("RNS instance cleared")
-            
+
             time.sleep(0.5)
-            
+
             # Initialize storage system
             storage = initialize_storage(page)
-            
+
             # Get Reticulum config directory from storage manager
             config_dir = storage.get_reticulum_config_path()
-            
+
             # Ensure any saved config is written to filesystem before RNS init
             try:
                 saved_config = storage.load_config()
@@ -136,27 +137,28 @@ def reload_reticulum(page: Page, on_complete=None):
                     config_file_path.write_text(saved_config, encoding="utf-8")
             except Exception as e:
                 print(f"Warning: Failed to write config file: {e}")
-            
+
             try:
                 # Re-initialize Reticulum
                 import ren_browser.logs
+
                 ren_browser.logs.setup_rns_logging()
                 RNS_INSTANCE = RNS.Reticulum(str(config_dir))
-                
+
                 # Success
                 if on_complete:
                     on_complete(True, None)
-                    
+
             except Exception as e:
                 print(f"Error reinitializing Reticulum: {e}")
                 if on_complete:
                     on_complete(False, str(e))
-                    
+
         except Exception as e:
             print(f"Error during reload: {e}")
             if on_complete:
                 on_complete(False, str(e))
-    
+
     page.run_thread(reload_thread)
 
 
@@ -172,10 +174,17 @@ def run():
         help="Select renderer (plaintext or micron)",
     )
     parser.add_argument(
-        "-w", "--web", action="store_true", help="Launch in web browser mode",
+        "-w",
+        "--web",
+        action="store_true",
+        help="Launch in web browser mode",
     )
     parser.add_argument(
-        "-p", "--port", type=int, default=None, help="Port for web server",
+        "-p",
+        "--port",
+        type=int,
+        default=None,
+        help="Port for web server",
     )
     parser.add_argument(
         "-c",

@@ -77,8 +77,15 @@ def open_settings_tab(page: ft.Page, tab_manager):
                 snack = ft.SnackBar(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=20),
-                            ft.Text("Configuration saved! Restart app to apply changes.", color=ft.Colors.WHITE),
+                            ft.Icon(
+                                ft.Icons.CHECK_CIRCLE,
+                                color=ft.Colors.GREEN_400,
+                                size=20,
+                            ),
+                            ft.Text(
+                                "Configuration saved! Restart app to apply changes.",
+                                color=ft.Colors.WHITE,
+                            ),
                         ],
                         tight=True,
                     ),
@@ -93,7 +100,9 @@ def open_settings_tab(page: ft.Page, tab_manager):
                     content=ft.Row(
                         controls=[
                             ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400, size=20),
-                            ft.Text("Failed to save configuration", color=ft.Colors.WHITE),
+                            ft.Text(
+                                "Failed to save configuration", color=ft.Colors.WHITE
+                            ),
                         ],
                         tight=True,
                     ),
@@ -127,7 +136,9 @@ def open_settings_tab(page: ft.Page, tab_manager):
                     content=ft.Row(
                         controls=[
                             ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400, size=20),
-                            ft.Text("Failed to save configuration", color=ft.Colors.WHITE),
+                            ft.Text(
+                                "Failed to save configuration", color=ft.Colors.WHITE
+                            ),
                         ],
                         tight=True,
                     ),
@@ -138,11 +149,16 @@ def open_settings_tab(page: ft.Page, tab_manager):
                 snack.open = True
                 page.update()
                 return
-            
+
             loading_snack = ft.SnackBar(
                 content=ft.Row(
                     controls=[
-                        ft.ProgressRing(width=16, height=16, stroke_width=2, color=ft.Colors.BLUE_400),
+                        ft.ProgressRing(
+                            width=16,
+                            height=16,
+                            stroke_width=2,
+                            color=ft.Colors.BLUE_400,
+                        ),
                         ft.Text("Reloading Reticulum...", color=ft.Colors.WHITE),
                     ],
                     tight=True,
@@ -153,17 +169,24 @@ def open_settings_tab(page: ft.Page, tab_manager):
             page.overlay.append(loading_snack)
             loading_snack.open = True
             page.update()
-            
+
             def on_reload_complete(success, error):
                 loading_snack.open = False
                 page.update()
-                
+
                 if success:
                     snack = ft.SnackBar(
                         content=ft.Row(
                             controls=[
-                                ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=20),
-                                ft.Text("Reticulum reloaded successfully!", color=ft.Colors.WHITE),
+                                ft.Icon(
+                                    ft.Icons.CHECK_CIRCLE,
+                                    color=ft.Colors.GREEN_400,
+                                    size=20,
+                                ),
+                                ft.Text(
+                                    "Reticulum reloaded successfully!",
+                                    color=ft.Colors.WHITE,
+                                ),
                             ],
                             tight=True,
                         ),
@@ -174,8 +197,12 @@ def open_settings_tab(page: ft.Page, tab_manager):
                     snack = ft.SnackBar(
                         content=ft.Row(
                             controls=[
-                                ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400, size=20),
-                                ft.Text(f"Reload failed: {error}", color=ft.Colors.WHITE),
+                                ft.Icon(
+                                    ft.Icons.ERROR, color=ft.Colors.RED_400, size=20
+                                ),
+                                ft.Text(
+                                    f"Reload failed: {error}", color=ft.Colors.WHITE
+                                ),
                             ],
                             tight=True,
                         ),
@@ -185,10 +212,11 @@ def open_settings_tab(page: ft.Page, tab_manager):
                 page.overlay.append(snack)
                 snack.open = True
                 page.update()
-            
+
             import ren_browser.app as app_module
+
             app_module.reload_reticulum(page, on_reload_complete)
-            
+
         except Exception as ex:
             snack = ft.SnackBar(
                 content=ft.Row(
@@ -217,8 +245,15 @@ def open_settings_tab(page: ft.Page, tab_manager):
                 snack = ft.SnackBar(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=20),
-                            ft.Text("Appearance settings saved and applied!", color=ft.Colors.WHITE),
+                            ft.Icon(
+                                ft.Icons.CHECK_CIRCLE,
+                                color=ft.Colors.GREEN_400,
+                                size=20,
+                            ),
+                            ft.Text(
+                                "Appearance settings saved and applied!",
+                                color=ft.Colors.WHITE,
+                            ),
                         ],
                         tight=True,
                     ),
@@ -233,7 +268,10 @@ def open_settings_tab(page: ft.Page, tab_manager):
                     content=ft.Row(
                         controls=[
                             ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400, size=20),
-                            ft.Text("Failed to save appearance settings", color=ft.Colors.WHITE),
+                            ft.Text(
+                                "Failed to save appearance settings",
+                                color=ft.Colors.WHITE,
+                            ),
                         ],
                         tight=True,
                     ),
@@ -410,7 +448,14 @@ def open_settings_tab(page: ft.Page, tab_manager):
 
     nav_card = ft.Container(
         content=ft.Row(
-            controls=[btn_config, btn_appearance, btn_errors, btn_ret, btn_storage, btn_refresh],
+            controls=[
+                btn_config,
+                btn_appearance,
+                btn_errors,
+                btn_ret,
+                btn_storage,
+                btn_refresh,
+            ],
             spacing=8,
             wrap=True,
         ),

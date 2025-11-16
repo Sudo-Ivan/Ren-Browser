@@ -51,11 +51,14 @@ class TestStorageManager:
         with (
             patch("os.name", "posix"),
             patch.dict(
-                "os.environ", {"XDG_CONFIG_HOME": "/home/user/.config"}, clear=True,
+                "os.environ",
+                {"XDG_CONFIG_HOME": "/home/user/.config"},
+                clear=True,
             ),
-            patch("pathlib.Path.mkdir"),patch(
-            "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
-        ),
+            patch("pathlib.Path.mkdir"),
+            patch(
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
+            ),
         ):
             storage = StorageManager()
             storage._storage_dir = storage._get_storage_directory()
@@ -71,7 +74,11 @@ class TestStorageManager:
         """Test storage directory detection for Android with ANDROID_DATA."""
         with (
             patch("os.name", "posix"),
-            patch.dict("os.environ", {"ANDROID_ROOT": "/system", "ANDROID_DATA": "/data"}, clear=True),
+            patch.dict(
+                "os.environ",
+                {"ANDROID_ROOT": "/system", "ANDROID_DATA": "/data"},
+                clear=True,
+            ),
             patch("pathlib.Path.mkdir"),
         ):
             with patch(
@@ -86,7 +93,11 @@ class TestStorageManager:
         """Test storage directory detection for Android with EXTERNAL_STORAGE."""
         with (
             patch("os.name", "posix"),
-            patch.dict("os.environ", {"ANDROID_ROOT": "/system", "EXTERNAL_STORAGE": "/storage/emulated/0"}, clear=True),
+            patch.dict(
+                "os.environ",
+                {"ANDROID_ROOT": "/system", "EXTERNAL_STORAGE": "/storage/emulated/0"},
+                clear=True,
+            ),
             patch("pathlib.Path.mkdir"),
         ):
             with patch(
@@ -102,9 +113,10 @@ class TestStorageManager:
         with (
             patch("os.name", "posix"),
             patch.dict("os.environ", {"ANDROID_ROOT": "/system"}, clear=True),
-            patch("pathlib.Path.mkdir"),patch(
-            "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
-        ),
+            patch("pathlib.Path.mkdir"),
+            patch(
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
+            ),
         ):
             storage = StorageManager()
             storage._storage_dir = storage._get_storage_directory()
@@ -169,7 +181,8 @@ class TestStorageManager:
 
                 assert result is True
                 mock_page.client_storage.set.assert_called_with(
-                    "ren_browser_config", config_content,
+                    "ren_browser_config",
+                    config_content,
                 )
 
     def test_save_config_fallback(self):
@@ -182,13 +195,16 @@ class TestStorageManager:
             storage._storage_dir = Path(temp_dir)
 
             # Mock the reticulum config path to use temp dir and cause failure
-            with patch.object(
-                storage,
-                "get_reticulum_config_path",
-                return_value=Path(temp_dir) / "reticulum",
-            ), patch(
-                "pathlib.Path.write_text",
-                side_effect=PermissionError("Access denied"),
+            with (
+                patch.object(
+                    storage,
+                    "get_reticulum_config_path",
+                    return_value=Path(temp_dir) / "reticulum",
+                ),
+                patch(
+                    "pathlib.Path.write_text",
+                    side_effect=PermissionError("Access denied"),
+                ),
             ):
                 config_content = "test config content"
                 result = storage.save_config(config_content)
@@ -196,7 +212,8 @@ class TestStorageManager:
                 assert result is True
                 # Check that the config was set to client storage
                 mock_page.client_storage.set.assert_any_call(
-                    "ren_browser_config", config_content,
+                    "ren_browser_config",
+                    config_content,
                 )
             # Verify that client storage was called at least once
             assert mock_page.client_storage.set.call_count >= 1
@@ -354,10 +371,13 @@ class TestStorageManager:
         with patch.object(StorageManager, "_get_storage_directory") as mock_get_dir:
             mock_get_dir.return_value = Path("/nonexistent/path")
 
-            with patch(
-                "pathlib.Path.mkdir",
-                side_effect=[PermissionError("Access denied"), None],
-            ), patch("tempfile.gettempdir", return_value="/tmp"):
+            with (
+                patch(
+                    "pathlib.Path.mkdir",
+                    side_effect=[PermissionError("Access denied"), None],
+                ),
+                patch("tempfile.gettempdir", return_value="/tmp"),
+            ):
                 storage = StorageManager()
 
                 expected_fallback = Path("/tmp") / "ren_browser"
@@ -444,7 +464,8 @@ class TestStorageManagerEdgeCases:
         storage = StorageManager()
 
         with patch(
-            "pathlib.Path.write_text", side_effect=PermissionError("Access denied"),
+            "pathlib.Path.write_text",
+            side_effect=PermissionError("Access denied"),
         ):
             test_path = Path("/mock/path")
             result = storage._is_writable(test_path)

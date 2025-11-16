@@ -19,7 +19,9 @@ class TestAnnounce:
     def test_announce_with_none_display_name(self):
         """Test Announce creation with None display name."""
         announce = Announce(
-            destination_hash="1234567890abcdef", display_name=None, timestamp=1234567890,
+            destination_hash="1234567890abcdef",
+            display_name=None,
+            timestamp=1234567890,
         )
 
         assert announce.destination_hash == "1234567890abcdef"

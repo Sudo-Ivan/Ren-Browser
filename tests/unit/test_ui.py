@@ -29,7 +29,12 @@ class TestBuildUI:
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
     def test_build_ui_appbar_setup(
-        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page,
+        self,
+        mock_shortcuts,
+        mock_tabs,
+        mock_fetcher,
+        mock_announce_service,
+        mock_page,
     ):
         """Test that build_ui sets up the app bar correctly."""
         mock_tab_manager = Mock()
@@ -51,7 +56,12 @@ class TestBuildUI:
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
     def test_build_ui_drawer_setup(
-        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page,
+        self,
+        mock_shortcuts,
+        mock_tabs,
+        mock_fetcher,
+        mock_announce_service,
+        mock_page,
     ):
         """Test that build_ui sets up the drawer correctly."""
         mock_tab_manager = Mock()

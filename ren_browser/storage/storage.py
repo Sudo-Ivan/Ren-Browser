@@ -51,9 +51,7 @@ class StorageManager:
         elif "APPDATA" in os.environ:  # Windows
             storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
         elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard
-            storage_dir = (
-                pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
-            )
+            storage_dir = pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
         else:
             storage_dir = pathlib.Path.home() / ".ren_browser"
 
@@ -126,7 +124,8 @@ class StorageManager:
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set("ren_browser_config", config_content)
                 self.page.client_storage.set(
-                    "ren_browser_config_error", f"File save failed: {error}",
+                    "ren_browser_config_error",
+                    f"File save failed: {error}",
                 )
                 return True
 
@@ -193,7 +192,8 @@ class StorageManager:
 
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set(
-                    "ren_browser_bookmarks", json.dumps(bookmarks),
+                    "ren_browser_bookmarks",
+                    json.dumps(bookmarks),
                 )
 
             return True
@@ -258,7 +258,9 @@ class StorageManager:
                 json.dump(settings, f, indent=2)
 
             if self.page and hasattr(self.page, "client_storage"):
-                self.page.client_storage.set("ren_browser_settings", json.dumps(settings))
+                self.page.client_storage.set(
+                    "ren_browser_settings", json.dumps(settings)
+                )
 
             return True
         except Exception:
@@ -270,7 +272,7 @@ class StorageManager:
             "horizontal_scroll": False,
             "page_bgcolor": "#000000",
         }
-        
+
         try:
             settings_path = self._storage_dir / "settings.json"
             if settings_path.exists():

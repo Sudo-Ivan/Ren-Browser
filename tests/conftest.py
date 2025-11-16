@@ -62,7 +62,9 @@ def sample_page_request():
     from ren_browser.pages.page_request import PageRequest
 
     return PageRequest(
-        destination_hash="1234567890abcdef", page_path="/page/index.mu", field_data=None,
+        destination_hash="1234567890abcdef",
+        page_path="/page/index.mu",
+        field_data=None,
     )
 
 

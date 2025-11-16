@@ -84,7 +84,9 @@ def build_ui(page: Page):
                         tab_manager._on_tab_go(None, idx)
 
                     if req.page_path.endswith(".mu"):
-                        new_control = render_micron(result, on_link_click=handle_link_click)
+                        new_control = render_micron(
+                            result, on_link_click=handle_link_click
+                        )
                     else:
                         new_control = render_plaintext(result)
                     tab["content_control"] = new_control
