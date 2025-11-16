@@ -33,7 +33,7 @@ jobs:
           poetry install --without dev
 
       - name: Build Linux package
-        run: poetry run flet build linux
+        run: poetry run flet build linux --no-rich-output
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -62,7 +62,10 @@ jobs:
           poetry install --without dev
 
       - name: Build Windows package
-        run: poetry run flet build windows
+        run: poetry run flet build windows --no-rich-output
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: 1
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -101,7 +104,6 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --without dev
-          pip install --upgrade flet
 
       - name: Build Android APK
         run: poetry run flet build apk --no-rich-output --exclude watchdog
