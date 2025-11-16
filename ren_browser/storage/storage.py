@@ -37,15 +37,18 @@ class StorageManager:
             pass
 
         if os.name == "posix" and "ANDROID_ROOT" in os.environ:
-            # Android - use user-accessible external storage
-            storage_dir = pathlib.Path("/storage/emulated/0/Documents/ren_browser")
+            if "ANDROID_DATA" in os.environ:
+                storage_dir = pathlib.Path(os.environ["ANDROID_DATA"]) / "ren_browser"
+            elif "EXTERNAL_STORAGE" in os.environ:
+                ext_storage = pathlib.Path(os.environ["EXTERNAL_STORAGE"])
+                storage_dir = ext_storage / "ren_browser"
+            else:
+                storage_dir = pathlib.Path("/data/local/tmp/ren_browser")
         elif hasattr(os, "uname") and "iOS" in str(
             getattr(os, "uname", lambda: "")()
         ).replace("iPhone", "iOS"):
-            # iOS - use app's documents directory
             storage_dir = pathlib.Path.home() / "Documents" / "ren_browser"
         else:
-            # Desktop (Linux, Windows, macOS) - use home directory
             if "APPDATA" in os.environ:  # Windows
                 storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
             elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard

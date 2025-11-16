@@ -68,8 +68,38 @@ class TestStorageManager:
         # Skip this test on non-Windows systems to avoid path issues
         pytest.skip("Windows path test skipped on non-Windows system")
 
-    def test_get_storage_directory_android(self):
-        """Test storage directory detection for Android."""
+    def test_get_storage_directory_android_with_android_data(self):
+        """Test storage directory detection for Android with ANDROID_DATA."""
+        with (
+            patch("os.name", "posix"),
+            patch.dict("os.environ", {"ANDROID_ROOT": "/system", "ANDROID_DATA": "/data"}, clear=True),
+            patch("pathlib.Path.mkdir"),
+        ):
+            with patch(
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
+            ):
+                storage = StorageManager()
+                storage._storage_dir = storage._get_storage_directory()
+                expected_dir = Path("/data/ren_browser")
+                assert storage._storage_dir == expected_dir
+
+    def test_get_storage_directory_android_with_external_storage(self):
+        """Test storage directory detection for Android with EXTERNAL_STORAGE."""
+        with (
+            patch("os.name", "posix"),
+            patch.dict("os.environ", {"ANDROID_ROOT": "/system", "EXTERNAL_STORAGE": "/storage/emulated/0"}, clear=True),
+            patch("pathlib.Path.mkdir"),
+        ):
+            with patch(
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
+            ):
+                storage = StorageManager()
+                storage._storage_dir = storage._get_storage_directory()
+                expected_dir = Path("/storage/emulated/0/ren_browser")
+                assert storage._storage_dir == expected_dir
+
+    def test_get_storage_directory_android_fallback(self):
+        """Test storage directory detection for Android with fallback."""
         with (
             patch("os.name", "posix"),
             patch.dict("os.environ", {"ANDROID_ROOT": "/system"}, clear=True),
@@ -80,7 +110,7 @@ class TestStorageManager:
             ):
                 storage = StorageManager()
                 storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/storage/emulated/0/Documents/ren_browser")
+                expected_dir = Path("/data/local/tmp/ren_browser")
                 assert storage._storage_dir == expected_dir
 
     def test_get_config_path(self):
