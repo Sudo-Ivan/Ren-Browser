@@ -32,7 +32,7 @@ linux:
 # Android APK build
 apk:
 	@echo "Building Android APK..."
-	poetry run flet build apk
+	poetry run flet build apk --cleanup-packages --exclude watchdog
 
 # Development targets
 test:
