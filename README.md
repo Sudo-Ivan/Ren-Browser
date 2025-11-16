@@ -102,13 +102,6 @@ uv sync
 uv run ren-browser-web
 ```
 
-### Docker/Podman
-
-```bash
-docker build -t ren-browser .
-docker run -p 8550:8550 -v ./config:/app/config ren-browser
-```
-
 ## Building
 
 ### Linux

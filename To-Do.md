@@ -2,7 +2,6 @@
 
 ## Bugs
 
-- [ ] Fix Docker 
 - [ ] Test Config Saving on Android.
 - [ ] Fix persisting app state in background on Android. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
 - [ ] Fix tabs dragging/reordering and overflow issues. https://github.com/Sudo-Ivan/Ren-Browser/issues/1
@@ -42,7 +41,6 @@
 
 ## Distribution
 
-- [ ] Add Docker images to build Windows, Linux, MacOS, Android, iOS.
 - [ ] Add/Update build workflow to build Windows, MacOS and iOS. 
 - [ ] Appimage
 - [ ] Flatpak
