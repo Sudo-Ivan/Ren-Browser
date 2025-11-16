@@ -63,66 +63,58 @@ class TestMicronRenderer:
     """
 
     def test_render_micron_basic(self):
-        """Test basic micron rendering (currently displays raw content)."""
+        """Test basic micron rendering."""
         content = "# Heading\n\nSome content"
         result = render_micron(content)
 
-        assert isinstance(result, ft.Text)
-        assert result.value == "# Heading\n\nSome content"
-        assert result.selectable is True
-        assert result.font_family == "monospace"
+        assert isinstance(result, ft.Column)
         assert result.expand is True
+        assert result.scroll == ft.ScrollMode.AUTO
 
     def test_render_micron_empty(self):
         """Test micron rendering with empty content."""
         content = ""
         result = render_micron(content)
 
-        assert isinstance(result, ft.Text)
-        assert result.value == ""
-        assert result.selectable is True
+        assert isinstance(result, ft.Column)
+        assert len(result.controls) >= 0
 
     def test_render_micron_unicode(self):
         """Test micron rendering with Unicode characters."""
         content = "Unicode content: 你好 🌍 αβγ"
         result = render_micron(content)
 
-        assert isinstance(result, ft.Text)
-        assert result.value == content
-        assert result.selectable is True
+        assert isinstance(result, ft.Column)
+        assert len(result.controls) > 0
 
 
 class TestRendererComparison:
     """Test cases comparing both renderers."""
 
     def test_renderers_return_same_type(self):
-        """Test that both renderers return the same control type."""
+        """Test that both renderers return Flet controls."""
         content = "Test content"
 
         plaintext_result = render_plaintext(content)
         micron_result = render_micron(content)
 
-        assert type(plaintext_result) is type(micron_result)
         assert isinstance(plaintext_result, ft.Text)
-        assert isinstance(micron_result, ft.Text)
+        assert isinstance(micron_result, ft.Column)
 
     def test_renderers_preserve_content(self):
-        """Test that both renderers preserve the original content."""
+        """Test that plaintext renderer preserves content."""
         content = "Test content with\nmultiple lines"
 
         plaintext_result = render_plaintext(content)
-        micron_result = render_micron(content)
 
         assert plaintext_result.value == content
-        assert micron_result.value == content
 
     def test_renderers_same_properties(self):
-        """Test that both renderers set the same basic properties."""
+        """Test that both renderers have expand property."""
         content = "Test content"
 
         plaintext_result = render_plaintext(content)
         micron_result = render_micron(content)
 
-        assert plaintext_result.selectable == micron_result.selectable
-        assert plaintext_result.font_family == micron_result.font_family
-        assert plaintext_result.expand == micron_result.expand
+        assert plaintext_result.expand is True
+        assert micron_result.expand is True

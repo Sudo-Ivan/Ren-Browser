@@ -29,7 +29,7 @@ class TestBuildUI:
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
     def test_build_ui_appbar_setup(
-        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page
+        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page,
     ):
         """Test that build_ui sets up the app bar correctly."""
         mock_tab_manager = Mock()
@@ -51,7 +51,7 @@ class TestBuildUI:
     @patch("ren_browser.tabs.tabs.TabsManager")
     @patch("ren_browser.controls.shortcuts.Shortcuts")
     def test_build_ui_drawer_setup(
-        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page
+        self, mock_shortcuts, mock_tabs, mock_fetcher, mock_announce_service, mock_page,
     ):
         """Test that build_ui sets up the drawer correctly."""
         mock_tab_manager = Mock()
@@ -129,14 +129,14 @@ class TestOpenSettingsTab:
             # Get the settings content that was added
             settings_content = mock_tab_manager._add_tab_internal.call_args[0][1]
 
-            # Find the save button and simulate click
+            # Find the save button - now nested in action_row container
             save_btn = None
             for control in settings_content.controls:
-                if hasattr(control, "controls"):
-                    for sub_control in control.controls:
+                if hasattr(control, "content") and hasattr(control.content, "controls"):
+                    for sub_control in control.content.controls:
                         if (
                             hasattr(sub_control, "text")
-                            and sub_control.text == "Save Config"
+                            and sub_control.text == "Save Configuration"
                         ):
                             save_btn = sub_control
                             break

@@ -7,7 +7,7 @@ and other application data across different platforms.
 import json
 import os
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any
 
 import flet as ft
 
@@ -19,7 +19,7 @@ class StorageManager:
     with platform-specific storage locations.
     """
 
-    def __init__(self, page: Optional[ft.Page] = None):
+    def __init__(self, page: ft.Page | None = None):
         """Initialize storage manager.
 
         Args:
@@ -45,18 +45,17 @@ class StorageManager:
             else:
                 storage_dir = pathlib.Path("/data/local/tmp/ren_browser")
         elif hasattr(os, "uname") and "iOS" in str(
-            getattr(os, "uname", lambda: "")()
+            getattr(os, "uname", lambda: "")(),
         ).replace("iPhone", "iOS"):
             storage_dir = pathlib.Path.home() / "Documents" / "ren_browser"
+        elif "APPDATA" in os.environ:  # Windows
+            storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
+        elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard
+            storage_dir = (
+                pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
+            )
         else:
-            if "APPDATA" in os.environ:  # Windows
-                storage_dir = pathlib.Path(os.environ["APPDATA"]) / "ren_browser"
-            elif "XDG_CONFIG_HOME" in os.environ:  # Linux XDG standard
-                storage_dir = (
-                    pathlib.Path(os.environ["XDG_CONFIG_HOME"]) / "ren_browser"
-                )
-            else:
-                storage_dir = pathlib.Path.home() / ".ren_browser"
+            storage_dir = pathlib.Path.home() / ".ren_browser"
 
         return storage_dir
 
@@ -127,7 +126,7 @@ class StorageManager:
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set("ren_browser_config", config_content)
                 self.page.client_storage.set(
-                    "ren_browser_config_error", f"File save failed: {error}"
+                    "ren_browser_config_error", f"File save failed: {error}",
                 )
                 return True
 
@@ -194,7 +193,7 @@ class StorageManager:
 
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set(
-                    "ren_browser_bookmarks", json.dumps(bookmarks)
+                    "ren_browser_bookmarks", json.dumps(bookmarks),
                 )
 
             return True
@@ -206,7 +205,7 @@ class StorageManager:
         try:
             bookmarks_path = self._storage_dir / "bookmarks.json"
             if bookmarks_path.exists():
-                with open(bookmarks_path, "r", encoding="utf-8") as f:
+                with open(bookmarks_path, encoding="utf-8") as f:
                     return json.load(f)
 
             if self.page and hasattr(self.page, "client_storage"):
@@ -238,7 +237,7 @@ class StorageManager:
         try:
             history_path = self._storage_dir / "history.json"
             if history_path.exists():
-                with open(history_path, "r", encoding="utf-8") as f:
+                with open(history_path, encoding="utf-8") as f:
                     return json.load(f)
 
             if self.page and hasattr(self.page, "client_storage"):
@@ -251,7 +250,46 @@ class StorageManager:
 
         return []
 
-    def get_storage_info(self) -> Dict[str, Any]:
+    def save_app_settings(self, settings: dict) -> bool:
+        """Save application settings to storage."""
+        try:
+            settings_path = self._storage_dir / "settings.json"
+            with open(settings_path, "w", encoding="utf-8") as f:
+                json.dump(settings, f, indent=2)
+
+            if self.page and hasattr(self.page, "client_storage"):
+                self.page.client_storage.set("ren_browser_settings", json.dumps(settings))
+
+            return True
+        except Exception:
+            return False
+
+    def load_app_settings(self) -> dict:
+        """Load application settings from storage."""
+        default_settings = {
+            "horizontal_scroll": False,
+            "page_bgcolor": "#000000",
+        }
+        
+        try:
+            settings_path = self._storage_dir / "settings.json"
+            if settings_path.exists():
+                with open(settings_path, encoding="utf-8") as f:
+                    loaded = json.load(f)
+                    return {**default_settings, **loaded}
+
+            if self.page and hasattr(self.page, "client_storage"):
+                stored_settings = self.page.client_storage.get("ren_browser_settings")
+                if stored_settings and isinstance(stored_settings, str):
+                    loaded = json.loads(stored_settings)
+                    return {**default_settings, **loaded}
+
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+
+        return default_settings
+
+    def get_storage_info(self) -> dict[str, Any]:
         """Get information about the storage system."""
         return {
             "storage_dir": str(self._storage_dir),
@@ -275,10 +313,10 @@ class StorageManager:
 
 
 # Global storage instance
-_storage_manager: Optional[StorageManager] = None
+_storage_manager: StorageManager | None = None
 
 
-def get_storage_manager(page: Optional[ft.Page] = None) -> StorageManager:
+def get_storage_manager(page: ft.Page | None = None) -> StorageManager:
     """Get the global storage manager instance."""
     global _storage_manager
     if _storage_manager is None:

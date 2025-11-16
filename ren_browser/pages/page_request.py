@@ -45,7 +45,7 @@ class PageFetcher:
 
         """
         RNS.log(
-            f"PageFetcher: starting fetch of {req.page_path} from {req.destination_hash}"
+            f"PageFetcher: starting fetch of {req.page_path} from {req.destination_hash}",
         )
         dest_bytes = bytes.fromhex(req.destination_hash)
         if not RNS.Transport.has_path(dest_bytes):
@@ -87,11 +87,11 @@ class PageFetcher:
                 req.field_data,
                 response_callback=on_response,
                 failed_callback=on_failed,
-            )
+            ),
         )
         ev.wait(timeout=15)
         data_str = result["data"] or "No content received"
         RNS.log(
-            f"PageFetcher: received data for {req.destination_hash}:{req.page_path}"
+            f"PageFetcher: received data for {req.destination_hash}:{req.page_path}",
         )
         return data_str

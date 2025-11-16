@@ -34,8 +34,8 @@ class TestTabsManager:
             assert isinstance(manager.manager, SimpleNamespace)
             assert len(manager.manager.tabs) == 1
             assert manager.manager.index == 0
-            assert isinstance(manager.tab_bar, ft.Row)
-            assert manager.tab_bar.scroll is None
+            assert isinstance(manager.tab_bar, ft.Container)
+            assert isinstance(manager.tab_bar.content, ft.Row)
             assert manager.overflow_menu is None
             assert isinstance(manager.content_container, ft.Container)
 
@@ -105,12 +105,12 @@ class TestTabsManager:
         """Test that selecting a tab updates background colors correctly."""
         tabs_manager._add_tab_internal("Tab 2", Mock())
 
-        tab_controls = tabs_manager.tab_bar.controls[:-2]  # Exclude add/close buttons
+        tab_controls = tabs_manager.tab_bar.content.controls[:-2]  # Exclude add/close buttons
 
         tabs_manager.select_tab(1)
 
-        assert tab_controls[0].bgcolor == ft.Colors.SURFACE_CONTAINER_HIGHEST
-        assert tab_controls[1].bgcolor == ft.Colors.PRIMARY_CONTAINER
+        assert tab_controls[0].bgcolor == ft.Colors.GREY_800
+        assert tab_controls[1].bgcolor == ft.Colors.BLUE_900
 
     def test_on_tab_go_empty_url(self, tabs_manager):
         """Test tab go with empty URL."""
@@ -146,12 +146,12 @@ class TestTabsManager:
     def test_tab_container_properties(self, tabs_manager):
         """Test that tab container has correct properties."""
         assert tabs_manager.content_container.expand is True
-        assert tabs_manager.content_container.bgcolor == ft.Colors.BLACK
-        assert tabs_manager.content_container.padding == ft.padding.all(5)
+        assert tabs_manager.content_container.bgcolor in (ft.Colors.BLACK, "#000000")
+        assert tabs_manager.content_container.padding == ft.padding.all(16)
 
     def test_tab_bar_controls(self, tabs_manager):
         """Test that tab bar has correct controls."""
-        controls = tabs_manager.tab_bar.controls
+        controls = tabs_manager.tab_bar.content.controls
 
         # Should have: home tab, add button, close button (and potentially overflow menu)
         assert len(controls) >= 3
@@ -180,7 +180,7 @@ class TestTabsManager:
         url_field = tab["url_field"]
 
         assert url_field.expand is True
-        assert url_field.text_style.size == 12
+        assert url_field.text_style.size == 14
         assert url_field.content_padding is not None
 
     def test_go_button_properties(self, tabs_manager):
@@ -188,14 +188,14 @@ class TestTabsManager:
         tab = tabs_manager.manager.tabs[0]
         go_btn = tab["go_btn"]
 
-        assert go_btn.icon == ft.Icons.OPEN_IN_BROWSER
-        assert go_btn.tooltip == "Load URL"
+        assert go_btn.icon == ft.Icons.ARROW_FORWARD
+        assert go_btn.tooltip == "Go"
 
     def test_tab_click_handlers(self, tabs_manager):
         """Test that tab click handlers are properly set."""
         tabs_manager._add_tab_internal("Tab 2", Mock())
 
-        tab_controls = tabs_manager.tab_bar.controls[:-2]  # Exclude add/close buttons
+        tab_controls = tabs_manager.tab_bar.content.controls[:-2]  # Exclude add/close buttons
 
         for i, control in enumerate(tab_controls):
             assert control.on_click is not None
@@ -242,20 +242,20 @@ class TestTabsManager:
         # With page width at 800, add enough tabs that some should overflow.
         for i in range(10): # Total 11 tabs
             tabs_manager._add_tab_internal(f"Tab {i + 2}", Mock())
-        
+
         # Check that an overflow menu exists
         assert tabs_manager.overflow_menu is not None
-        
+
         # Simulate a smaller screen, expecting more tabs to overflow
         tabs_manager.page.width = 400
         tabs_manager._update_tab_visibility()
-        visible_tabs_small = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
+        visible_tabs_small = sum(1 for c in tabs_manager.tab_bar.content.controls if isinstance(c, ft.Container) and c.visible)
         assert visible_tabs_small < 11
 
         # Simulate a larger screen, expecting all tabs to be visible
         tabs_manager.page.width = 1600
         tabs_manager._update_tab_visibility()
-        visible_tabs_large = sum(1 for c in tabs_manager.tab_bar.controls if isinstance(c, ft.Container) and c.visible)
-        
+        visible_tabs_large = sum(1 for c in tabs_manager.tab_bar.content.controls if isinstance(c, ft.Container) and c.visible)
+
         assert visible_tabs_large == 11
         assert tabs_manager.overflow_menu is None

@@ -18,7 +18,7 @@ class TestStorageManager:
     def test_storage_manager_init_without_page(self):
         """Test StorageManager initialization without a page."""
         with patch(
-            "ren_browser.storage.storage.StorageManager._get_storage_directory"
+            "ren_browser.storage.storage.StorageManager._get_storage_directory",
         ) as mock_get_dir:
             mock_dir = Path("/mock/storage")
             mock_get_dir.return_value = mock_dir
@@ -35,7 +35,7 @@ class TestStorageManager:
         mock_page = Mock()
 
         with patch(
-            "ren_browser.storage.storage.StorageManager._get_storage_directory"
+            "ren_browser.storage.storage.StorageManager._get_storage_directory",
         ) as mock_get_dir:
             mock_dir = Path("/mock/storage")
             mock_get_dir.return_value = mock_dir
@@ -51,17 +51,16 @@ class TestStorageManager:
         with (
             patch("os.name", "posix"),
             patch.dict(
-                "os.environ", {"XDG_CONFIG_HOME": "/home/user/.config"}, clear=True
+                "os.environ", {"XDG_CONFIG_HOME": "/home/user/.config"}, clear=True,
             ),
-            patch("pathlib.Path.mkdir"),
+            patch("pathlib.Path.mkdir"),patch(
+            "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
+        ),
         ):
-            with patch(
-                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
-            ):
-                storage = StorageManager()
-                storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/home/user/.config") / "ren_browser"
-                assert storage._storage_dir == expected_dir
+            storage = StorageManager()
+            storage._storage_dir = storage._get_storage_directory()
+            expected_dir = Path("/home/user/.config") / "ren_browser"
+            assert storage._storage_dir == expected_dir
 
     def test_get_storage_directory_windows(self):
         """Test storage directory detection for Windows."""
@@ -76,7 +75,7 @@ class TestStorageManager:
             patch("pathlib.Path.mkdir"),
         ):
             with patch(
-                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
             ):
                 storage = StorageManager()
                 storage._storage_dir = storage._get_storage_directory()
@@ -91,7 +90,7 @@ class TestStorageManager:
             patch("pathlib.Path.mkdir"),
         ):
             with patch(
-                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
+                "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
             ):
                 storage = StorageManager()
                 storage._storage_dir = storage._get_storage_directory()
@@ -103,15 +102,14 @@ class TestStorageManager:
         with (
             patch("os.name", "posix"),
             patch.dict("os.environ", {"ANDROID_ROOT": "/system"}, clear=True),
-            patch("pathlib.Path.mkdir"),
+            patch("pathlib.Path.mkdir"),patch(
+            "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
+        ),
         ):
-            with patch(
-                "ren_browser.storage.storage.StorageManager._ensure_storage_directory"
-            ):
-                storage = StorageManager()
-                storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/data/local/tmp/ren_browser")
-                assert storage._storage_dir == expected_dir
+            storage = StorageManager()
+            storage._storage_dir = storage._get_storage_directory()
+            expected_dir = Path("/data/local/tmp/ren_browser")
+            assert storage._storage_dir == expected_dir
 
     def test_get_config_path(self):
         """Test getting config file path."""
@@ -171,7 +169,7 @@ class TestStorageManager:
 
                 assert result is True
                 mock_page.client_storage.set.assert_called_with(
-                    "ren_browser_config", config_content
+                    "ren_browser_config", config_content,
                 )
 
     def test_save_config_fallback(self):
@@ -188,19 +186,18 @@ class TestStorageManager:
                 storage,
                 "get_reticulum_config_path",
                 return_value=Path(temp_dir) / "reticulum",
+            ), patch(
+                "pathlib.Path.write_text",
+                side_effect=PermissionError("Access denied"),
             ):
-                with patch(
-                    "pathlib.Path.write_text",
-                    side_effect=PermissionError("Access denied"),
-                ):
-                    config_content = "test config content"
-                    result = storage.save_config(config_content)
+                config_content = "test config content"
+                result = storage.save_config(config_content)
 
-                    assert result is True
-                    # Check that the config was set to client storage
-                    mock_page.client_storage.set.assert_any_call(
-                        "ren_browser_config", config_content
-                    )
+                assert result is True
+                # Check that the config was set to client storage
+                mock_page.client_storage.set.assert_any_call(
+                    "ren_browser_config", config_content,
+                )
             # Verify that client storage was called at least once
             assert mock_page.client_storage.set.call_count >= 1
 
@@ -270,7 +267,7 @@ class TestStorageManager:
             bookmarks_path = storage._storage_dir / "bookmarks.json"
             assert bookmarks_path.exists()
 
-            with open(bookmarks_path, "r", encoding="utf-8") as f:
+            with open(bookmarks_path, encoding="utf-8") as f:
                 loaded_bookmarks = json.load(f)
             assert loaded_bookmarks == bookmarks
 
@@ -311,7 +308,7 @@ class TestStorageManager:
             history_path = storage._storage_dir / "history.json"
             assert history_path.exists()
 
-            with open(history_path, "r", encoding="utf-8") as f:
+            with open(history_path, encoding="utf-8") as f:
                 loaded_history = json.load(f)
             assert loaded_history == history
 
@@ -360,12 +357,11 @@ class TestStorageManager:
             with patch(
                 "pathlib.Path.mkdir",
                 side_effect=[PermissionError("Access denied"), None],
-            ):
-                with patch("tempfile.gettempdir", return_value="/tmp"):
-                    storage = StorageManager()
+            ), patch("tempfile.gettempdir", return_value="/tmp"):
+                storage = StorageManager()
 
-                    expected_fallback = Path("/tmp") / "ren_browser"
-                    assert storage._storage_dir == expected_fallback
+                expected_fallback = Path("/tmp") / "ren_browser"
+                assert storage._storage_dir == expected_fallback
 
 
 class TestStorageGlobalFunctions:
@@ -448,7 +444,7 @@ class TestStorageManagerEdgeCases:
         storage = StorageManager()
 
         with patch(
-            "pathlib.Path.write_text", side_effect=PermissionError("Access denied")
+            "pathlib.Path.write_text", side_effect=PermissionError("Access denied"),
         ):
             test_path = Path("/mock/path")
             result = storage._is_writable(test_path)
