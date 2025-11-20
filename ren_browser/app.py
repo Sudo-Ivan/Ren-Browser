@@ -75,6 +75,10 @@ async def main(page: Page):
         except Exception as e:
             print(f"Warning: Failed to write config file: {e}")
 
+        print(f"Initializing RNS with config directory: {config_dir}")
+        print(f"Config directory exists: {config_dir.exists()}")
+        print(f"Config directory is writable: {config_dir.is_dir() if config_dir.exists() else 'N/A'}")
+        
         try:
             # Set up logging capture first, before RNS init
             import ren_browser.logs
@@ -82,8 +86,12 @@ async def main(page: Page):
             ren_browser.logs.setup_rns_logging()
             global RNS_INSTANCE
             RNS_INSTANCE = RNS.Reticulum(str(config_dir))
-        except (OSError, ValueError):
-            pass
+            print("RNS initialized successfully")
+        except Exception as e:
+            print(f"Error initializing Reticulum: {e}")
+            print(f"Config directory: {config_dir}")
+            import traceback
+            traceback.print_exc()
         page.controls.clear()
         build_ui(page)
         page.update()
