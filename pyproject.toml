@@ -41,3 +41,16 @@ exclude = ["watchdog"]
 [tool.flet.flutter.pubspec.dependency_overrides]
 webview_flutter_android = "4.10.1"
 
+[tool.flet.android]
+min_sdk_version = 21
+target_sdk_version = 34
+
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+"android.permission.ACCESS_NETWORK_STATE" = true
+"android.permission.ACCESS_WIFI_STATE" = true
+"android.permission.WAKE_LOCK" = true
+"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" = true
+"android.permission.FOREGROUND_SERVICE" = true
+"android.permission.FOREGROUND_SERVICE_DATA_SYNC" = true
+
