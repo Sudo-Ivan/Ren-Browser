@@ -1,5 +1,5 @@
 # Ren Browser Makefile
-.PHONY: help build poetry-build linux apk clean test lint format
+.PHONY: help build poetry-build linux apk clean test lint format run
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build              - Build the project (alias for poetry-build)"
 	@echo "  poetry-build       - Build project with Poetry"
+	@echo "  run                - Launch Ren Browser via Poetry"
 	@echo "  linux              - Build Linux package"
 	@echo "  apk                - Build Android APK"
 	@echo "  test               - Run tests"
@@ -46,6 +47,11 @@ lint:
 format:
 	@echo "Formatting code..."
 	poetry run ruff format .
+
+# Run application
+run:
+	@echo "Starting Ren Browser..."
+	poetry run ren-browser
 
 # Clean build artifacts
 clean:
