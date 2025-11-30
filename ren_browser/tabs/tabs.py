@@ -61,7 +61,8 @@ class TabsManager:
 
         default_content = (
             render_micron(
-                "Welcome to Ren Browser", on_link_click=handle_link_click_home
+                "Welcome to Ren Browser",
+                on_link_click=handle_link_click_home,
             )
             if app_module.RENDERER == "micron"
             else render_plaintext("Welcome to Ren Browser")

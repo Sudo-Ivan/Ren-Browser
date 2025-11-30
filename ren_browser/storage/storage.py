@@ -259,7 +259,8 @@ class StorageManager:
 
             if self.page and hasattr(self.page, "client_storage"):
                 self.page.client_storage.set(
-                    "ren_browser_settings", json.dumps(settings)
+                    "ren_browser_settings",
+                    json.dumps(settings),
                 )
 
             return True

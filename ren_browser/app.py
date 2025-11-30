@@ -5,6 +5,7 @@ Ren Browser, a browser for the Reticulum Network built with Flet.
 """
 
 import argparse
+import logging
 import os
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from ren_browser.ui.ui import build_ui
 RENDERER = "plaintext"
 RNS_CONFIG_DIR = None
 RNS_INSTANCE = None
+logger = logging.getLogger(__name__)
 
 
 async def main(page: Page):
@@ -63,7 +65,7 @@ async def main(page: Page):
 
         ren_browser.logs.setup_rns_logging()
     except Exception:
-        pass
+        logger.exception("Unable to configure RNS logging")
 
     success = rns.initialize_reticulum(config_override)
     if not success:

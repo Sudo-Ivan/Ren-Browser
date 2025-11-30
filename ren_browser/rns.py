@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 import RNS
+
+logger = logging.getLogger(__name__)
 
 
 class RNSManager:
@@ -15,8 +17,8 @@ class RNSManager:
 
     def __init__(self):
         self.reticulum = None
-        self.config_path: Optional[str] = None
-        self.last_error: Optional[str] = None
+        self.config_path: str | None = None
+        self.last_error: str | None = None
 
     def _is_android(self) -> bool:
         vendor = getattr(RNS, "vendor", None)
@@ -47,9 +49,8 @@ class RNSManager:
         return Path(tempfile.gettempdir())
 
     def _default_config_root(self) -> Path:
-        override = (
-            os.environ.get("REN_BROWSER_RNS_DIR")
-            or os.environ.get("REN_RETICULUM_CONFIG_DIR")
+        override = os.environ.get("REN_BROWSER_RNS_DIR") or os.environ.get(
+            "REN_RETICULUM_CONFIG_DIR",
         )
         if override:
             return Path(override).expanduser()
@@ -57,8 +58,10 @@ class RNSManager:
             return self._android_storage_root() / "ren_browser" / "reticulum"
         return Path.home() / ".reticulum"
 
-    def _resolve_config_dir(self, preferred: Optional[str | Path]) -> Path:
-        target = Path(preferred).expanduser() if preferred else self._default_config_root()
+    def _resolve_config_dir(self, preferred: str | Path | None) -> Path:
+        target = (
+            Path(preferred).expanduser() if preferred else self._default_config_root()
+        )
         allow_fallback = preferred is None
 
         try:
@@ -128,7 +131,7 @@ class RNSManager:
             config_file.write_text(base_content, encoding="utf-8")
             os.chmod(config_file, 0o600)
         except Exception:
-            pass
+            logger.exception("Failed to seed default config at %s", config_file)
 
     def _ensure_default_tcp_interfaces(self) -> None:
         if not self.config_path:
@@ -152,7 +155,10 @@ class RNSManager:
                     cfg.write("\n")
                 cfg.write("\n" + snippet + "\n")
         except Exception:
-            pass
+            logger.exception(
+                "Failed to append default TCP interfaces to %s",
+                config_file,
+            )
 
     def _get_or_create_config_dir(self) -> Path:
         if self.config_path:
@@ -162,7 +168,7 @@ class RNSManager:
         self.config_path = str(resolved)
         return resolved
 
-    def initialize(self, config_dir: Optional[str] = None) -> bool:
+    def initialize(self, config_dir: str | None = None) -> bool:
         """Initialize the Reticulum instance."""
         self.last_error = None
         try:
@@ -225,7 +231,7 @@ class RNSManager:
             self.last_error = str(exc)
             return False
 
-    def get_config_path(self) -> Optional[str]:
+    def get_config_path(self) -> str | None:
         """Return the directory holding the active Reticulum config."""
         if self.config_path:
             return self.config_path
@@ -240,7 +246,7 @@ class RNSManager:
         """Return the current Reticulum instance, if any."""
         return self.reticulum
 
-    def get_last_error(self) -> Optional[str]:
+    def get_last_error(self) -> str | None:
         """Return the last recorded error string."""
         return self.last_error
 
@@ -248,7 +254,7 @@ class RNSManager:
 rns_manager = RNSManager()
 
 
-def initialize_reticulum(config_dir: Optional[str] = None) -> bool:
+def initialize_reticulum(config_dir: str | None = None) -> bool:
     """Initialize Reticulum using the shared manager."""
     return rns_manager.initialize(config_dir)
 
@@ -263,7 +269,7 @@ def get_reticulum_instance():
     return rns_manager.get_reticulum_instance()
 
 
-def get_config_path() -> Optional[str]:
+def get_config_path() -> str | None:
     """Expose the active configuration directory."""
     return rns_manager.get_config_path()
 
@@ -278,7 +284,6 @@ def write_config_file(content: str) -> bool:
     return rns_manager.write_config_file(content)
 
 
-def get_last_error() -> Optional[str]:
+def get_last_error() -> str | None:
     """Return the last recorded Reticulum error."""
     return rns_manager.get_last_error()
-

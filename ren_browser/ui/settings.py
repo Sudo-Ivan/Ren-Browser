@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+import logging
 
 import flet as ft
 import RNS
@@ -13,6 +14,7 @@ from ren_browser.storage.storage import get_storage_manager
 
 BUTTON_BG = "#0B3D91"
 BUTTON_BG_HOVER = "#082C6C"
+logger = logging.getLogger(__name__)
 
 
 def _blue_button_style() -> ft.ButtonStyle:
@@ -52,14 +54,14 @@ def _get_interface_statuses():
     for interface in interfaces:
         if interface is None:
             continue
-        if (
-            interface.__class__.__name__ == "LocalClientInterface"
-            and getattr(interface, "is_connected_to_shared_instance", False)
+        if interface.__class__.__name__ == "LocalClientInterface" and getattr(
+            interface, "is_connected_to_shared_instance", False,
         ):
             continue
         statuses.append(
             {
-                "name": getattr(interface, "name", None) or interface.__class__.__name__,
+                "name": getattr(interface, "name", None)
+                or interface.__class__.__name__,
                 "online": bool(getattr(interface, "online", False)),
                 "type": interface.__class__.__name__,
                 "bitrate": getattr(interface, "bitrate", None),
@@ -194,7 +196,9 @@ def _build_storage_field(storage):
 
     def refresh():
         info = storage.get_storage_info()
-        storage_field.value = "\n".join(f"{key}: {value}" for key, value in info.items())
+        storage_field.value = "\n".join(
+            f"{key}: {value}" for key, value in info.items()
+        )
 
     refresh()
     return storage_field, refresh
@@ -245,8 +249,12 @@ def open_settings_tab(page: ft.Page, tab_manager):
         try:
             color_preview.bgcolor = page_bgcolor_field.value
             page.update()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "Ignoring invalid background color '%s': %s",
+                page_bgcolor_field.value,
+                exc,
+            )
 
     page_bgcolor_field.on_change = on_bgcolor_change
 
@@ -484,4 +492,3 @@ def open_settings_tab(page: ft.Page, tab_manager):
     idx = len(tab_manager.manager.tabs) - 1
     tab_manager.select_tab(idx)
     page.update()
-

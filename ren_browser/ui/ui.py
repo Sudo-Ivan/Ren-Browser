@@ -85,7 +85,8 @@ def build_ui(page: Page):
 
                     if req.page_path.endswith(".mu"):
                         new_control = render_micron(
-                            result, on_link_click=handle_link_click
+                            result,
+                            on_link_click=handle_link_click,
                         )
                     else:
                         new_control = render_plaintext(result)

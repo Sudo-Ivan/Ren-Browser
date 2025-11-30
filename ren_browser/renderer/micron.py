@@ -45,7 +45,7 @@ def parse_micron_line(line: str) -> list:
                         "underline": underline,
                         "color": color,
                         "bgcolor": bgcolor,
-                    }
+                    },
                 )
                 current_text = ""
 
@@ -95,7 +95,7 @@ def parse_micron_line(line: str) -> list:
                 "underline": underline,
                 "color": color,
                 "bgcolor": bgcolor,
-            }
+            },
         )
 
     return spans
@@ -196,8 +196,9 @@ def _render_micron_internal(content: str, on_link_click=None) -> ft.Control:
                 before = line[last_end : link_match.start()]
                 if before:
                     before_spans = parse_micron_line(before)
-                    for span in before_spans:
-                        row_controls.append(create_text_span(span))
+                    row_controls.extend(
+                        create_text_span(span) for span in before_spans
+                    )
 
                 label = link_match.group(1)
                 url = link_match.group(2)
@@ -225,8 +226,9 @@ def _render_micron_internal(content: str, on_link_click=None) -> ft.Control:
             after = line[last_end:]
             if after:
                 after_spans = parse_micron_line(after)
-                for span in after_spans:
-                    row_controls.append(create_text_span(span))
+                row_controls.extend(
+                    create_text_span(span) for span in after_spans
+                )
 
             if row_controls:
                 controls.append(

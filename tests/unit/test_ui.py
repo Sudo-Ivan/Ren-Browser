@@ -107,7 +107,9 @@ class TestOpenSettingsTab:
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch(
+                "ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns",
+            ),
             patch("pathlib.Path.read_text", return_value="config content"),
         ):
             open_settings_tab(mock_page, mock_tab_manager)
@@ -130,7 +132,9 @@ class TestOpenSettingsTab:
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch(
+                "ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns",
+            ),
             patch("pathlib.Path.read_text", side_effect=Exception("File not found")),
         ):
             open_settings_tab(mock_page, mock_tab_manager)
@@ -155,7 +159,9 @@ class TestOpenSettingsTab:
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch(
+                "ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns",
+            ),
             patch("pathlib.Path.read_text", return_value="config"),
             patch("pathlib.Path.write_text") as mock_write,
         ):
@@ -194,7 +200,9 @@ class TestOpenSettingsTab:
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch(
+                "ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns",
+            ),
             patch("pathlib.Path.read_text", return_value="config"),
             patch("pathlib.Path.write_text", side_effect=Exception("disk full")),
         ):
@@ -229,7 +237,9 @@ class TestOpenSettingsTab:
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch(
+                "ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns",
+            ),
             patch("pathlib.Path.read_text", return_value="config"),
         ):
             open_settings_tab(mock_page, mock_tab_manager)

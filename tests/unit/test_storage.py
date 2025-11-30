@@ -80,14 +80,14 @@ class TestStorageManager:
                 clear=True,
             ),
             patch("pathlib.Path.mkdir"),
-        ):
-            with patch(
+            patch(
                 "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
-            ):
-                storage = StorageManager()
-                storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/data/ren_browser")
-                assert storage._storage_dir == expected_dir
+            ),
+        ):
+            storage = StorageManager()
+            storage._storage_dir = storage._get_storage_directory()
+            expected_dir = Path("/data/ren_browser")
+            assert storage._storage_dir == expected_dir
 
     def test_get_storage_directory_android_with_external_storage(self):
         """Test storage directory detection for Android with EXTERNAL_STORAGE."""
@@ -99,14 +99,14 @@ class TestStorageManager:
                 clear=True,
             ),
             patch("pathlib.Path.mkdir"),
-        ):
-            with patch(
+            patch(
                 "ren_browser.storage.storage.StorageManager._ensure_storage_directory",
-            ):
-                storage = StorageManager()
-                storage._storage_dir = storage._get_storage_directory()
-                expected_dir = Path("/storage/emulated/0/ren_browser")
-                assert storage._storage_dir == expected_dir
+            ),
+        ):
+            storage = StorageManager()
+            storage._storage_dir = storage._get_storage_directory()
+            expected_dir = Path("/storage/emulated/0/ren_browser")
+            assert storage._storage_dir == expected_dir
 
     def test_get_storage_directory_android_fallback(self):
         """Test storage directory detection for Android with fallback."""
