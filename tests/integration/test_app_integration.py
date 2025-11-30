@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import flet as ft
 import pytest
 
 from ren_browser import app
@@ -14,16 +15,21 @@ class TestAppIntegration:
         mock_page = Mock()
         mock_page.add = Mock()
         mock_page.update = Mock()
-        mock_page.run_thread = Mock()
         mock_page.controls = Mock()
         mock_page.controls.clear = Mock()
+        mock_page.width = 1024
+        mock_page.window = Mock()
+        mock_page.window.maximized = False
+        mock_page.appbar = Mock()
+        mock_page.drawer = Mock()
+        mock_page.theme_mode = ft.ThemeMode.DARK
 
         await app.main(mock_page)
 
-        # Verify that the main function sets up the loading screen
-        mock_page.add.assert_called_once()
+        assert mock_page.add.call_count >= 1
+        loader_call = mock_page.add.call_args_list[0][0][0]
+        assert isinstance(loader_call, ft.Container)
         mock_page.update.assert_called()
-        mock_page.run_thread.assert_called_once()
 
     def test_entry_points_exist(self):
         """Test that all expected entry points exist and are callable."""

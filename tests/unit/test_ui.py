@@ -93,28 +93,46 @@ class TestBuildUI:
 class TestOpenSettingsTab:
     """Test cases for the open_settings_tab function."""
 
-    def test_open_settings_tab_basic(self, mock_page):
+    def test_open_settings_tab_basic(self, mock_page, mock_storage_manager):
         """Test opening settings tab with basic functionality."""
         mock_tab_manager = Mock()
         mock_tab_manager.manager.tabs = []
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch("pathlib.Path.read_text", return_value="config content"):
+        mock_page.overlay = []
+
+        with (
+            patch(
+                "ren_browser.ui.settings.get_storage_manager",
+                return_value=mock_storage_manager,
+            ),
+            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch("pathlib.Path.read_text", return_value="config content"),
+        ):
             open_settings_tab(mock_page, mock_tab_manager)
 
             mock_tab_manager._add_tab_internal.assert_called_once()
             mock_tab_manager.select_tab.assert_called_once()
             mock_page.update.assert_called()
 
-    def test_open_settings_tab_config_error(self, mock_page):
+    def test_open_settings_tab_config_error(self, mock_page, mock_storage_manager):
         """Test opening settings tab when config file cannot be read."""
         mock_tab_manager = Mock()
         mock_tab_manager.manager.tabs = []
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch("pathlib.Path.read_text", side_effect=Exception("File not found")):
+        mock_page.overlay = []
+
+        with (
+            patch(
+                "ren_browser.ui.settings.get_storage_manager",
+                return_value=mock_storage_manager,
+            ),
+            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch("pathlib.Path.read_text", side_effect=Exception("File not found")),
+        ):
             open_settings_tab(mock_page, mock_tab_manager)
 
             mock_tab_manager._add_tab_internal.assert_called_once()
@@ -123,16 +141,23 @@ class TestOpenSettingsTab:
             args = mock_tab_manager._add_tab_internal.call_args
             assert args[0][0] == "Settings"
 
-    def test_settings_save_config_success(self, mock_page):
+    def test_settings_save_config_success(self, mock_page, mock_storage_manager):
         """Test saving config successfully in settings."""
         mock_tab_manager = Mock()
         mock_tab_manager.manager.tabs = []
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
+        mock_page.overlay = []
+
         with (
+            patch(
+                "ren_browser.ui.settings.get_storage_manager",
+                return_value=mock_storage_manager,
+            ),
+            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
             patch("pathlib.Path.read_text", return_value="config"),
-            patch("pathlib.Path.write_text"),
+            patch("pathlib.Path.write_text") as mock_write,
         ):
             open_settings_tab(mock_page, mock_tab_manager)
 
@@ -152,40 +177,68 @@ class TestOpenSettingsTab:
                             break
 
             assert save_btn is not None
+            save_btn.on_click(None)
+            assert mock_write.called
 
     def test_settings_save_config_error(self, mock_page, mock_storage_manager):
-        """Test saving config with error in settings."""
+        """Test saving config error path does not crash."""
         mock_tab_manager = Mock()
         mock_tab_manager.manager.tabs = []
         mock_tab_manager._add_tab_internal = Mock()
         mock_tab_manager.select_tab = Mock()
 
-        with patch(
-            "ren_browser.ui.settings.get_storage_manager",
-            return_value=mock_storage_manager,
-        ):
-            open_settings_tab(mock_page, mock_tab_manager)
-
-            settings_content = mock_tab_manager._add_tab_internal.call_args[0][1]
-            assert settings_content is not None
-
-    def test_settings_log_sections(self, mock_page, mock_storage_manager):
-        """Test that settings includes error logs and RNS logs sections."""
-        mock_tab_manager = Mock()
-        mock_tab_manager.manager.tabs = []
-        mock_tab_manager._add_tab_internal = Mock()
-        mock_tab_manager.select_tab = Mock()
+        mock_page.overlay = []
 
         with (
             patch(
                 "ren_browser.ui.settings.get_storage_manager",
                 return_value=mock_storage_manager,
             ),
-            patch("ren_browser.logs.ERROR_LOGS", ["Error 1", "Error 2"]),
-            patch("ren_browser.logs.RET_LOGS", ["RNS log 1", "RNS log 2"]),
+            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch("pathlib.Path.read_text", return_value="config"),
+            patch("pathlib.Path.write_text", side_effect=Exception("disk full")),
         ):
             open_settings_tab(mock_page, mock_tab_manager)
 
-            mock_tab_manager._add_tab_internal.assert_called_once()
-            args = mock_tab_manager._add_tab_internal.call_args
-            assert args[0][0] == "Settings"
+            settings_content = mock_tab_manager._add_tab_internal.call_args[0][1]
+            save_btn = None
+            for control in settings_content.controls:
+                if hasattr(control, "content") and hasattr(control.content, "controls"):
+                    for sub_control in control.content.controls:
+                        if (
+                            hasattr(sub_control, "text")
+                            and sub_control.text == "Save Configuration"
+                        ):
+                            save_btn = sub_control
+                            break
+            assert save_btn is not None
+            # Should not raise despite write failure
+            save_btn.on_click(None)
+
+    def test_settings_status_section_present(self, mock_page, mock_storage_manager):
+        """Ensure the status navigation button is present."""
+        mock_tab_manager = Mock()
+        mock_tab_manager.manager.tabs = []
+        mock_tab_manager._add_tab_internal = Mock()
+        mock_tab_manager.select_tab = Mock()
+
+        mock_page.overlay = []
+
+        with (
+            patch(
+                "ren_browser.ui.settings.get_storage_manager",
+                return_value=mock_storage_manager,
+            ),
+            patch("ren_browser.ui.settings.rns.get_config_path", return_value="/tmp/rns"),
+            patch("pathlib.Path.read_text", return_value="config"),
+        ):
+            open_settings_tab(mock_page, mock_tab_manager)
+
+            settings_content = mock_tab_manager._add_tab_internal.call_args[0][1]
+            nav_container = settings_content.controls[1]
+            button_labels = [
+                ctrl.text
+                for ctrl in nav_container.content.controls
+                if hasattr(ctrl, "text")
+            ]
+            assert "Status" in button_labels

@@ -5,11 +5,14 @@ Ren Browser, a browser for the Reticulum Network built with Flet.
 """
 
 import argparse
+import os
+from pathlib import Path
 
 import flet as ft
 import RNS
 from flet import AppView, Page
 
+from ren_browser import rns
 from ren_browser.storage.storage import initialize_storage
 from ren_browser.ui.ui import build_ui
 
@@ -50,44 +53,36 @@ async def main(page: Page):
     page.add(loader)
     page.update()
 
-    # Initialize storage system
-    storage = initialize_storage(page)
+    initialize_storage(page)
 
-    # Get Reticulum config directory from storage manager
-    config_dir = storage.get_reticulum_config_path()
+    config_override = RNS_CONFIG_DIR
 
-    # Update the global RNS_CONFIG_DIR so RNS uses the right path
-    global RNS_CONFIG_DIR
-    RNS_CONFIG_DIR = str(config_dir)
-
-    # Ensure any saved config is written to filesystem before RNS init
+    print("Initializing Reticulum Network...")
     try:
-        saved_config = storage.load_config()
-        if saved_config and saved_config.strip():
-            config_file_path = config_dir / "config"
-            config_file_path.parent.mkdir(parents=True, exist_ok=True)
-            config_file_path.write_text(saved_config, encoding="utf-8")
-    except Exception as e:
-        print(f"Warning: Failed to write config file: {e}")
-
-    print(f"Initializing RNS with config directory: {config_dir}")
-    print(f"Config directory exists: {config_dir.exists()}")
-    print(f"Config directory is writable: {config_dir.is_dir() if config_dir.exists() else 'N/A'}")
-    
-    try:
-        # Set up logging capture first, before RNS init
         import ren_browser.logs
 
         ren_browser.logs.setup_rns_logging()
+    except Exception:
+        pass
+
+    success = rns.initialize_reticulum(config_override)
+    if not success:
+        error_text = rns.get_last_error() or "Unknown error"
+        print(f"Error initializing Reticulum: {error_text}")
+    else:
         global RNS_INSTANCE
-        RNS_INSTANCE = RNS.Reticulum(str(config_dir))
+        RNS_INSTANCE = rns.get_reticulum_instance()
+        config_dir = rns.get_config_path()
+        if config_dir:
+            config_path = Path(config_dir)
+            print(f"RNS config directory: {config_path}")
+            print(f"Config directory exists: {config_path.exists()}")
+            print(
+                "Config directory is writable: "
+                f"{config_path.is_dir() and os.access(config_path, os.W_OK)}",
+            )
         print("RNS initialized successfully")
-    except Exception as e:
-        print(f"Error initializing Reticulum: {e}")
-        print(f"Config directory: {config_dir}")
-        import traceback
-        traceback.print_exc()
-    
+
     page.controls.clear()
     build_ui(page)
     page.update()
@@ -113,46 +108,24 @@ async def reload_reticulum(page: Page, on_complete=None):
             except Exception as e:
                 print(f"Warning during RNS shutdown: {e}")
 
+            rns.shutdown_reticulum()
             RNS.Reticulum._Reticulum__instance = None
-
             RNS.Transport.destinations = []
-
             RNS_INSTANCE = None
             print("RNS instance cleared")
 
         await asyncio.sleep(0.5)
 
-        # Initialize storage system
-        storage = initialize_storage(page)
-
-        # Get Reticulum config directory from storage manager
-        config_dir = storage.get_reticulum_config_path()
-
-        # Ensure any saved config is written to filesystem before RNS init
-        try:
-            saved_config = storage.load_config()
-            if saved_config and saved_config.strip():
-                config_file_path = config_dir / "config"
-                config_file_path.parent.mkdir(parents=True, exist_ok=True)
-                config_file_path.write_text(saved_config, encoding="utf-8")
-        except Exception as e:
-            print(f"Warning: Failed to write config file: {e}")
-
-        try:
-            # Re-initialize Reticulum
-            import ren_browser.logs
-
-            ren_browser.logs.setup_rns_logging()
-            RNS_INSTANCE = RNS.Reticulum(str(config_dir))
-
-            # Success
+        success = rns.initialize_reticulum(RNS_CONFIG_DIR)
+        if success:
+            RNS_INSTANCE = rns.get_reticulum_instance()
             if on_complete:
                 on_complete(True, None)
-
-        except Exception as e:
-            print(f"Error reinitializing Reticulum: {e}")
+        else:
+            error_text = rns.get_last_error() or "Unknown error"
+            print(f"Error reinitializing Reticulum: {error_text}")
             if on_complete:
-                on_complete(False, str(e))
+                on_complete(False, error_text)
 
     except Exception as e:
         print(f"Error during reload: {e}")
@@ -198,9 +171,7 @@ def run():
     if args.config_dir:
         RNS_CONFIG_DIR = args.config_dir
     else:
-        import pathlib
-
-        RNS_CONFIG_DIR = str(pathlib.Path.home() / ".reticulum")
+        RNS_CONFIG_DIR = None
 
     if args.web:
         if args.port is not None:

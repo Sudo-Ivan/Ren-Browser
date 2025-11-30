@@ -76,6 +76,11 @@ def mock_storage_manager():
     mock_storage.save_config.return_value = True
     mock_storage.get_config_path.return_value = Mock()
     mock_storage.get_reticulum_config_path.return_value = Mock()
+    mock_storage.load_app_settings.return_value = {
+        "horizontal_scroll": False,
+        "page_bgcolor": "#000000",
+    }
+    mock_storage.save_app_settings.return_value = True
     mock_storage.get_storage_info.return_value = {
         "storage_dir": "/mock/storage",
         "config_path": "/mock/storage/config.txt",

@@ -12,26 +12,34 @@ class TestApp:
     @pytest.mark.asyncio
     async def test_main_initializes_loader(self, mock_page, mock_rns):
         """Test that main function initializes with loading screen."""
-        with patch("ren_browser.ui.ui.build_ui"):
+        with (
+            patch("ren_browser.rns.initialize_reticulum", return_value=True),
+            patch("ren_browser.rns.get_reticulum_instance"),
+            patch("ren_browser.rns.get_config_path", return_value="/tmp/.reticulum"),
+            patch("ren_browser.app.build_ui"),
+        ):
             await app.main(mock_page)
 
-            mock_page.add.assert_called_once()
+            assert mock_page.add.call_count >= 1
+            loader_call = mock_page.add.call_args_list[0][0][0]
+            assert isinstance(loader_call, ft.Container)
             mock_page.update.assert_called()
-            mock_page.run_thread.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_main_function_structure(self, mock_page, mock_rns):
         """Test that main function sets up the expected structure."""
-        await app.main(mock_page)
+        with (
+            patch("ren_browser.rns.initialize_reticulum", return_value=True),
+            patch("ren_browser.rns.get_reticulum_instance"),
+            patch("ren_browser.rns.get_config_path"),
+            patch("ren_browser.app.build_ui"),
+        ):
+            await app.main(mock_page)
 
-        # Verify that main function adds content and sets up threading
-        mock_page.add.assert_called_once()
+        assert mock_page.add.call_count >= 1
+        loader_call = mock_page.add.call_args_list[0][0][0]
+        assert isinstance(loader_call, ft.Container)
         mock_page.update.assert_called()
-        mock_page.run_thread.assert_called_once()
-
-        # Verify that a function was passed to run_thread
-        init_function = mock_page.run_thread.call_args[0][0]
-        assert callable(init_function)
 
     def test_run_with_default_args(self, mock_rns):
         """Test run function with default arguments."""
