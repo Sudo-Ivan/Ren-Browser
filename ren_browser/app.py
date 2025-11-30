@@ -50,20 +50,83 @@ async def main(page: Page):
     page.add(loader)
     page.update()
 
-    def init_ret():
-        import time
+    # Initialize storage system
+    storage = initialize_storage(page)
 
-        time.sleep(0.5)
+    # Get Reticulum config directory from storage manager
+    config_dir = storage.get_reticulum_config_path()
+
+    # Update the global RNS_CONFIG_DIR so RNS uses the right path
+    global RNS_CONFIG_DIR
+    RNS_CONFIG_DIR = str(config_dir)
+
+    # Ensure any saved config is written to filesystem before RNS init
+    try:
+        saved_config = storage.load_config()
+        if saved_config and saved_config.strip():
+            config_file_path = config_dir / "config"
+            config_file_path.parent.mkdir(parents=True, exist_ok=True)
+            config_file_path.write_text(saved_config, encoding="utf-8")
+    except Exception as e:
+        print(f"Warning: Failed to write config file: {e}")
+
+    print(f"Initializing RNS with config directory: {config_dir}")
+    print(f"Config directory exists: {config_dir.exists()}")
+    print(f"Config directory is writable: {config_dir.is_dir() if config_dir.exists() else 'N/A'}")
+    
+    try:
+        # Set up logging capture first, before RNS init
+        import ren_browser.logs
+
+        ren_browser.logs.setup_rns_logging()
+        global RNS_INSTANCE
+        RNS_INSTANCE = RNS.Reticulum(str(config_dir))
+        print("RNS initialized successfully")
+    except Exception as e:
+        print(f"Error initializing Reticulum: {e}")
+        print(f"Config directory: {config_dir}")
+        import traceback
+        traceback.print_exc()
+    
+    page.controls.clear()
+    build_ui(page)
+    page.update()
+
+
+async def reload_reticulum(page: Page, on_complete=None):
+    """Hot reload Reticulum with updated configuration.
+
+    Args:
+        page: Flet page instance
+        on_complete: Optional callback to run when reload is complete
+
+    """
+    import asyncio
+
+    try:
+        global RNS_INSTANCE
+
+        if RNS_INSTANCE:
+            try:
+                RNS_INSTANCE.exit_handler()
+                print("RNS exit handler completed")
+            except Exception as e:
+                print(f"Warning during RNS shutdown: {e}")
+
+            RNS.Reticulum._Reticulum__instance = None
+
+            RNS.Transport.destinations = []
+
+            RNS_INSTANCE = None
+            print("RNS instance cleared")
+
+        await asyncio.sleep(0.5)
 
         # Initialize storage system
         storage = initialize_storage(page)
 
         # Get Reticulum config directory from storage manager
         config_dir = storage.get_reticulum_config_path()
-
-        # Update the global RNS_CONFIG_DIR so RNS uses the right path
-        global RNS_CONFIG_DIR
-        RNS_CONFIG_DIR = str(config_dir)
 
         # Ensure any saved config is written to filesystem before RNS init
         try:
@@ -75,99 +138,26 @@ async def main(page: Page):
         except Exception as e:
             print(f"Warning: Failed to write config file: {e}")
 
-        print(f"Initializing RNS with config directory: {config_dir}")
-        print(f"Config directory exists: {config_dir.exists()}")
-        print(f"Config directory is writable: {config_dir.is_dir() if config_dir.exists() else 'N/A'}")
-        
         try:
-            # Set up logging capture first, before RNS init
+            # Re-initialize Reticulum
             import ren_browser.logs
 
             ren_browser.logs.setup_rns_logging()
-            global RNS_INSTANCE
             RNS_INSTANCE = RNS.Reticulum(str(config_dir))
-            print("RNS initialized successfully")
-        except Exception as e:
-            print(f"Error initializing Reticulum: {e}")
-            print(f"Config directory: {config_dir}")
-            import traceback
-            traceback.print_exc()
-        page.controls.clear()
-        build_ui(page)
-        page.update()
 
-    page.run_thread(init_ret)
-
-
-def reload_reticulum(page: Page, on_complete=None):
-    """Hot reload Reticulum with updated configuration.
-
-    Args:
-        page: Flet page instance
-        on_complete: Optional callback to run when reload is complete
-
-    """
-
-    def reload_thread():
-        import time
-
-        try:
-            global RNS_INSTANCE
-
-            if RNS_INSTANCE:
-                try:
-                    RNS_INSTANCE.exit_handler()
-                    print("RNS exit handler completed")
-                except Exception as e:
-                    print(f"Warning during RNS shutdown: {e}")
-
-                RNS.Reticulum._Reticulum__instance = None
-
-                RNS.Transport.destinations = []
-
-                RNS_INSTANCE = None
-                print("RNS instance cleared")
-
-            time.sleep(0.5)
-
-            # Initialize storage system
-            storage = initialize_storage(page)
-
-            # Get Reticulum config directory from storage manager
-            config_dir = storage.get_reticulum_config_path()
-
-            # Ensure any saved config is written to filesystem before RNS init
-            try:
-                saved_config = storage.load_config()
-                if saved_config and saved_config.strip():
-                    config_file_path = config_dir / "config"
-                    config_file_path.parent.mkdir(parents=True, exist_ok=True)
-                    config_file_path.write_text(saved_config, encoding="utf-8")
-            except Exception as e:
-                print(f"Warning: Failed to write config file: {e}")
-
-            try:
-                # Re-initialize Reticulum
-                import ren_browser.logs
-
-                ren_browser.logs.setup_rns_logging()
-                RNS_INSTANCE = RNS.Reticulum(str(config_dir))
-
-                # Success
-                if on_complete:
-                    on_complete(True, None)
-
-            except Exception as e:
-                print(f"Error reinitializing Reticulum: {e}")
-                if on_complete:
-                    on_complete(False, str(e))
+            # Success
+            if on_complete:
+                on_complete(True, None)
 
         except Exception as e:
-            print(f"Error during reload: {e}")
+            print(f"Error reinitializing Reticulum: {e}")
             if on_complete:
                 on_complete(False, str(e))
 
-    page.run_thread(reload_thread)
+    except Exception as e:
+        print(f"Error during reload: {e}")
+        if on_complete:
+            on_complete(False, str(e))
 
 
 def run():

@@ -170,6 +170,34 @@ def open_settings_tab(page: ft.Page, tab_manager):
             loading_snack.open = True
             page.update()
 
+            async def do_reload():
+                import ren_browser.app as app_module
+                
+                try:
+                    await app_module.reload_reticulum(page, on_reload_complete)
+                except Exception as e:
+                    loading_snack.open = False
+                    page.update()
+                    
+                    snack = ft.SnackBar(
+                        content=ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.ERROR, color=ft.Colors.RED_400, size=20
+                                ),
+                                ft.Text(
+                                    f"Reload failed: {str(e)}", color=ft.Colors.WHITE
+                                ),
+                            ],
+                            tight=True,
+                        ),
+                        bgcolor=ft.Colors.RED_900,
+                        duration=4000,
+                    )
+                    page.overlay.append(snack)
+                    snack.open = True
+                    page.update()
+
             def on_reload_complete(success, error):
                 loading_snack.open = False
                 page.update()
@@ -213,9 +241,7 @@ def open_settings_tab(page: ft.Page, tab_manager):
                 snack.open = True
                 page.update()
 
-            import ren_browser.app as app_module
-
-            app_module.reload_reticulum(page, on_reload_complete)
+            page.run_task(do_reload)
 
         except Exception as ex:
             snack = ft.SnackBar(
